@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>第一节课 | 西南科技大学蓝鲸Sass开发课程</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <script defer src="../assets/js/main.js"></script>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学Sass开发课程</div>
+      <nav class="nav-links">
+        <a href="../index.html">首页</a>
+        <a href="course-01.html" data-nav>第一节课</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container course-layout">
+    <div class="breadcrumb"><a href="../index.html">首页</a> / 第一节课</div>
+    <article class="panel">
+      <h1>第一节课</h1>
+
+      <h2>课程目标</h2>
+      <ol>
+        <li>了解课程整体安排与学习方法。</li>
+        <li>掌握基础开发工具链（AI 工具、uv、git）的使用场景。</li>
+        <li>建立 Python 基础语法与流程控制的认知框架。</li>
+      </ol>
+      <h2>课程内容</h2>
+      <h3>1. 常用工具介绍</h3>
+      <div class="slide-embed">
+        <iframe id="slide-frame" src="https://liyuhnag.github.io/normal-tool/" frameborder="0" allowfullscreen
+          loading="lazy"></iframe>
+        <div class="slide-toolbar">
+          <button class="btn slide-fullscreen-btn" type="button"
+            onclick="document.getElementById('slide-frame').requestFullscreen()">全屏查看</button>
+          <a class="btn" href="https://liyuhnag.github.io/normal-tool/" target="_blank" rel="noopener">新窗口打开</a>
+        </div>
+      </div>
+      <h3>2. Python 基础语法</h3>
+
+      <h4>2.1 数据类型</h4>
+      <p>Python 是动态类型语言，变量无需声明类型；而 C 是静态类型语言，必须在使用前声明。以下是两者的数据类型对比：</p>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>C 类型</th>
+            <th>Python 类型</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>int</code></td>
+            <td><code>int</code></td>
+            <td>Python 无溢出，支持任意精度</td>
+          </tr>
+          <tr>
+            <td><code>float</code> / <code>double</code></td>
+            <td><code>float</code></td>
+            <td>Python 只有 float（64 位双精度）</td>
+          </tr>
+          <tr>
+            <td><code>char</code> / <code>char[]</code></td>
+            <td><code>str</code></td>
+            <td>Python 字符串不可变，支持 Unicode</td>
+          </tr>
+          <tr>
+            <td><code>int</code> (0/1)</td>
+            <td><code>bool</code></td>
+            <td><code>True</code> / <code>False</code>（首字母大写）</td>
+          </tr>
+          <tr>
+            <td><code>NULL</code></td>
+            <td><code>None</code></td>
+            <td>Python 的空值</td>
+          </tr>
+          <tr>
+            <td>无</td>
+            <td><code>list</code></td>
+            <td>动态数组，类似 C 的数组但更强大</td>
+          </tr>
+          <tr>
+            <td>无</td>
+            <td><code>dict</code></td>
+            <td>键值对，类似 C 的哈希表</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="code-label">Python：动态类型，无需声明</div>
+      <pre class="code-block"><code>x = 10
+y = 3.14
+name = "hello"</code></pre>
+
+      <div class="code-label">整数 int —— 无溢出！</div>
+      <pre class="code-block"><code>a = 42
+big = 2 ** 100  # C 语言早就溢出了
+print(f"a = {a}, type = {type(a)}")
+print(f"2^100 = {big}")</code></pre>
+
+      <div class="code-label">链式比较</div>
+      <pre class="code-block"><code>x = 5
+print(f"1 < x < 10: {1 < x < 10}")  # 等价于 1 < x and x < 10</code></pre>
+      <h4>2.2 输入输出</h4>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>操作</th>
+            <th>C 语言</th>
+            <th>Python</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>输出</td>
+            <td><code>printf("x=%d", x)</code></td>
+            <td><code>print(f"x={x}")</code></td>
+          </tr>
+          <tr>
+            <td>输入</td>
+            <td><code>scanf("%d", &amp;x)</code></td>
+            <td><code>x = input("提示")</code></td>
+          </tr>
+          <tr>
+            <td>格式化</td>
+            <td><code>%d, %f, %s</code></td>
+            <td><strong>f-string</strong>: <code>f"{变量}"</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <blockquote class="tip-block">
+        Python 的 <code>input()</code> 总是返回<strong>字符串</strong>，需要手动转换类型。
+      </blockquote>
+
+      <div class="code-label">输入与类型转换</div>
+      <pre class="code-block"><code>name = input("请输入姓名: ")
+age = int(input("请输入年龄: "))
+
+print(f"{name} 今年 {age} 岁")</code></pre>
+
+      <div class="code-label">格式化输出</div>
+      <pre class="code-block"><code>name = "Alice"
+age = 20
+score = 95.5
+
+# f-string（推荐，Python 3.6+）
+print(f"姓名: {name}, 年龄: {age}, 成绩: {score}")</code></pre>
+
+      <div class="code-label">格式化控制</div>
+      <pre class="code-block"><code>print(f"成绩: {score:.1f}")           # 1位小数
+print(f"百分比: {0.856:.1%}")         # 百分比
+print(f"补零: {42:05d}")              # 00042
+print(f"对齐: {'左对齐':&lt;10}|{'右对齐':&gt;10}|{'居中':^10}")</code></pre>
+
+      <h4>2.3 条件语句</h4>
+      <div class="code-compare">
+        <div class="code-compare-col">
+          <div class="code-label">C 语言</div>
+          <pre class="code-block"><code>if (score >= 90) {
+    printf("优秀");
+} else if (score >= 60) {
+    printf("及格");
+} else {
+    printf("不及格");
+}</code></pre>
+        </div>
+        <div class="code-compare-col">
+          <div class="code-label">Python：无括号、无花括号，靠缩进</div>
+          <pre class="code-block"><code>if score >= 90:
+    print("优秀")
+elif score >= 60:
+    print("及格")
+else:
+    print("不及格")</code></pre>
+        </div>
+      </div>
+
+      <p class="sub-heading">Python 的 truthy / falsy 规则</p>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Falsy（假值）</th>
+            <th>Truthy（真值）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>False</code>, <code>0</code>, <code>0.0</code></td>
+            <td><code>True</code>, 非零数字</td>
+          </tr>
+          <tr>
+            <td><code>""</code> 空字符串</td>
+            <td>非空字符串</td>
+          </tr>
+          <tr>
+            <td><code>[]</code>, <code>()</code>, <code>{}</code> 空容器</td>
+            <td>非空容器</td>
+          </tr>
+          <tr>
+            <td><code>None</code></td>
+            <td>其他所有对象</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="sub-heading">match-case 模式匹配（Python 3.10+）</p>
+      <blockquote class="tip-block">
+        类似 C 的 <code>switch-case</code>，但功能更强大——可以匹配结构。
+      </blockquote>
+
+      <div class="code-compare">
+        <div class="code-compare-col">
+          <div class="code-label">C：switch-case</div>
+          <pre class="code-block"><code>switch(code) {
+    case 200: printf("OK"); break;
+    case 404: printf("Not Found"); break;
+    default: printf("Unknown");
+}</code></pre>
+        </div>
+        <div class="code-compare-col">
+          <div class="code-label">Python：match-case</div>
+          <pre class="code-block"><code>match code:
+    case 200:
+        print("OK")
+    case 404:
+        print("Not Found")
+    case _:
+        print("Unknown")</code></pre>
+        </div>
+      </div>
+
+      <div class="code-label">match-case 完整示例</div>
+      <pre class="code-block"><code>def handle_status(code):
+    match code:
+        case 200:
+            return "OK"
+        case 301 | 302:
+            return "重定向"
+        case 404:
+            return "未找到"
+        case 500:
+            return "服务器错误"
+        case _:
+            return f"未知状态码: {code}"
+
+for code in [200, 301, 404, 500, 418]:
+    print(f"  {code} -> {handle_status(code)}")</code></pre>
+
+      <div class="code-label">结构化匹配（比 C switch 强大）</div>
+      <pre class="code-block"><code>def process_command(cmd):
+    match cmd.split():
+        case ["quit"]:
+            return "退出程序"
+        case ["hello", name]:
+            return f"你好, {name}!"
+        case ["add", *nums]:
+            return f"求和: {sum(int(n) for n in nums)}"
+        case _:
+            return f"未知命令: {cmd}"
+
+for cmd in ["quit", "hello Alice", "add 1 2 3", "xyz"]:
+    print(f"  '{cmd}' -> {process_command(cmd)}")</code></pre>
+
+      <h4>2.4 循环语句</h4>
+      <p class="sub-heading">for 循环</p>
+      <div class="code-compare">
+        <div class="code-compare-col">
+          <div class="code-label">C 语言</div>
+          <pre class="code-block"><code>for (int i = 0; i &lt; 5; i++) {
+    printf("%d ", i);
+}</code></pre>
+        </div>
+        <div class="code-compare-col">
+          <div class="code-label">Python: for 变量 in 可迭代对象</div>
+          <pre class="code-block"><code>for i in range(5):
+    print(i, end=" ")</code></pre>
+        </div>
+      </div>
+
+      <p class="sub-heading">range() 函数</p>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>用法</th>
+            <th>含义</th>
+            <th>等价 C</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>range(5)</code></td>
+            <td>0,1,2,3,4</td>
+            <td><code>for(i=0;i&lt;5;i++)</code></td>
+          </tr>
+          <tr>
+            <td><code>range(2, 8)</code></td>
+            <td>2,3,4,5,6,7</td>
+            <td><code>for(i=2;i&lt;8;i++)</code></td>
+          </tr>
+          <tr>
+            <td><code>range(0, 10, 2)</code></td>
+            <td>0,2,4,6,8</td>
+            <td><code>for(i=0;i&lt;10;i+=2)</code></td>
+          </tr>
+          <tr>
+            <td><code>range(5, 0, -1)</code></td>
+            <td>5,4,3,2,1</td>
+            <td><code>for(i=5;i&gt;0;i--)</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="code-label">range 遍历</div>
+      <pre class="code-block"><code>for i in range(5):
+    print(i, end=" ")
+print()</code></pre>
+
+      <div class="code-label">遍历列表</div>
+      <pre class="code-block"><code>fruits = ["苹果", "香蕉", "橙子"]
+for fruit in fruits:
+    print(f"  水果: {fruit}")</code></pre>
+
+      <div class="code-label">enumerate —— 带索引遍历</div>
+      <pre class="code-block"><code>for i, fruit in enumerate(fruits):
+    print(f"  [{i}] {fruit}")</code></pre>
+
+      <div class="code-label">zip —— 并行遍历</div>
+      <pre class="code-block"><code>names = ["Alice", "Bob", "Charlie"]
+scores = [90, 85, 78]
+for name, score in zip(names, scores):
+    print(f"  {name}: {score}分")</code></pre>
+
+      <div class="code-label">while 循环</div>
+      <pre class="code-block"><code>count = 0
+while count &lt; 5:
+    print(count, end=" ")
+    count += 1
+print()</code></pre>
+
+      <div class="code-label">break / continue</div>
+      <pre class="code-block"><code>print("找到第一个偶数:")
+for i in range(1, 20):
+    if i % 2 != 0:
+        continue
+    print(f"  找到: {i}")
+    break</code></pre>
+
+      <div class="code-label">for-else（Python 特有！）</div>
+      <pre class="code-block"><code># else 在循环正常结束（没有 break）时执行
+target = 7
+for i in range(2, target):
+    if target % i == 0:
+        print(f"{target} 不是质数，因子: {i}")
+        break
+else:
+    print(f"{target} 是质数")</code></pre>
+      <h3>3. 基本数据结构</h3>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>类型</th>
+            <th>特点</th>
+            <th>C 语言类比</th>
+            <th>示例</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>str</code></td>
+            <td>不可变，有序</td>
+            <td><code>char[]</code>（但不可变）</td>
+            <td><code>"hello"</code></td>
+          </tr>
+          <tr>
+            <td><code>list</code></td>
+            <td><strong>可变</strong>，有序，可重复</td>
+            <td>动态数组</td>
+            <td><code>[1, 2, 3]</code></td>
+          </tr>
+          <tr>
+            <td><code>tuple</code></td>
+            <td><strong>不可变</strong>，有序</td>
+            <td>无</td>
+            <td><code>(1, 2, 3)</code></td>
+          </tr>
+          <tr>
+            <td><code>dict</code></td>
+            <td><strong>可变</strong>，键值对，键唯一</td>
+            <td>哈希表</td>
+            <td><code>{"a": 1}</code></td>
+          </tr>
+          <tr>
+            <td><code>set</code></td>
+            <td><strong>可变</strong>，无序，元素唯一</td>
+            <td>无</td>
+            <td><code>{1, 2, 3}</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>3.1 字符串 str</h4>
+      <blockquote class="tip-block">
+        字符串<strong>不可变</strong>。所有「修改」操作都返回新字符串。
+      </blockquote>
+
+      <div class="code-label">索引与切片</div>
+      <pre class="code-block"><code>s = "Hello, Python!"
+
+print(f"s[0] = '{s[0]}'")
+print(f"s[-1] = '{s[-1]}'")
+print(f"s[0:5] = '{s[0:5]}'")
+print(f"s[7:] = '{s[7:]}'")
+print(f"反转: '{s[::-1]}'")</code></pre>
+
+      <div class="code-label">upper / lower</div>
+      <pre class="code-block"><code>print(f"upper: '{s.upper()}'")
+print(f"lower: '{s.lower()}'")</code></pre>
+
+      <div class="code-label">split / join</div>
+      <pre class="code-block"><code>csv_line = "Alice,90,A"
+parts = csv_line.split(",")
+print(f"split: {parts}")
+
+joined = " | ".join(parts)
+print(f"join: {joined}")</code></pre>
+
+      <div class="code-label">strip</div>
+      <pre class="code-block"><code>print(f"strip: '{'  hello  '.strip()}'")</code></pre>
+
+      <div class="code-label">replace</div>
+      <pre class="code-block"><code>print(f"replace: '{s.replace('Python', 'World')}'")  </code></pre>
+
+      <div class="code-label">find</div>
+      <pre class="code-block"><code>print(f"find: {s.find('Python')}")</code></pre>
+
+      <div class="code-label">startswith</div>
+      <pre class="code-block"><code>print(f"startswith: {s.startswith('Hello')}")</code></pre>
+
+      <h4>3.2 列表 list</h4>
+      <blockquote class="tip-block">
+        最常用的数据结构，类似 C 的动态数组，但可以存储<strong>混合类型</strong>。
+      </blockquote>
+
+      <div class="code-label">增</div>
+      <pre class="code-block"><code>nums = [1, 2, 3, 4, 5]
+
+nums.append(6)          # 末尾添加
+nums.insert(0, 0)       # 指定位置插入
+nums.extend([7, 8])     # 批量添加
+print(f"增: {nums}")</code></pre>
+
+      <div class="code-label">删</div>
+      <pre class="code-block"><code>nums.pop()              # 删除末尾
+nums.pop(0)             # 删除指定位置
+nums.remove(3)          # 删除指定值（第一个）
+print(f"删: {nums}")</code></pre>
+
+      <div class="code-label">改</div>
+      <pre class="code-block"><code>nums[0] = 100
+print(f"改: {nums}")</code></pre>
+
+      <div class="code-label">查</div>
+      <pre class="code-block"><code>print(f"索引: nums[0] = {nums[0]}")
+print(f"切片: nums[1:3] = {nums[1:3]}")
+print(f"长度: {len(nums)}")
+print(f"包含: {5 in nums}")</code></pre>
+
+      <div class="code-label">排序</div>
+      <pre class="code-block"><code>nums = [3, 1, 4, 1, 5, 9, 2, 6]
+print(f"sorted: {sorted(nums)}")           # 返回新列表
+print(f"原列表: {nums}")                     # 不变
+nums.sort()                                  # 就地排序
+print(f"sort后: {nums}")</code></pre>
+
+      <div class="code-label">逆序</div>
+      <pre class="code-block"><code>print(f"reversed: {list(reversed(nums))}")</code></pre>
+
+      <div class="code-label">解包</div>
+      <pre class="code-block"><code>first, *middle, last = [1, 2, 3, 4, 5]
+print(f"first={first}, middle={middle}, last={last}")</code></pre>
+
+      <h4>3.3 元组 tuple</h4>
+      <blockquote class="tip-block">
+        不可变的列表。用于<strong>不应被修改的数据</strong>，如坐标、数据库记录。
+      </blockquote>
+
+      <div class="code-label">基本用法与解包</div>
+      <pre class="code-block"><code>point = (3, 4)
+print(f"point = {point}, type = {type(point)}")
+
+x, y = point
+print(f"x={x}, y={y}")</code></pre>
+
+      <div class="code-label">交换变量（Python 特色！）</div>
+      <pre class="code-block"><code>a, b = 1, 2
+a, b = b, a
+print(f"交换后: a={a}, b={b}")</code></pre>
+
+      <div class="code-label">元组作函数返回值</div>
+      <pre class="code-block"><code>def min_max(lst):
+    return min(lst), max(lst)
+
+lo, hi = min_max([3, 1, 4, 1, 5])
+print(f"最小={lo}, 最大={hi}")</code></pre>
+
+      <div class="code-label">命名元组（更可读）</div>
+      <pre class="code-block"><code>from collections import namedtuple
+Point = namedtuple("Point", ["x", "y"])
+p = Point(3, 4)
+print(f"p.x={p.x}, p.y={p.y}")</code></pre>
+
+      <h4>3.4 字典 dict</h4>
+      <blockquote class="tip-block">
+        键值对映射，查找速度 O(1)。Django 中到处都是字典（请求参数、配置、上下文等）。
+      </blockquote>
+
+      <div class="code-label">增 / 改</div>
+      <pre class="code-block"><code>student = {"name": "Alice", "age": 20, "score": 90}
+
+student["email"] = "alice@example.com"
+student["age"] = 21
+print(f"字典: {student}")</code></pre>
+
+      <div class="code-label">查</div>
+      <pre class="code-block"><code>print(f"name: {student['name']}")
+print(f"get: {student.get('phone', '未设置')}")  # 安全获取</code></pre>
+
+      <div class="code-label">删</div>
+      <pre class="code-block"><code>del student["email"]
+print(f"删除后: {student}")</code></pre>
+
+      <div class="code-label">遍历</div>
+      <pre class="code-block"><code>for key, value in student.items():
+    print(f"  {key}: {value}")</code></pre>
+
+      <div class="code-label">常用方法</div>
+      <pre class="code-block"><code>print(f"keys: {list(student.keys())}")
+print(f"values: {list(student.values())}")</code></pre>
+
+      <div class="code-label">字典合并（Python 3.9+）</div>
+      <pre class="code-block"><code>defaults = {"theme": "light", "lang": "en", "page_size": 20}
+user_prefs = {"theme": "dark", "lang": "zh"}
+merged = defaults | user_prefs     # 后者覆盖前者
+print(f"合并: {merged}")</code></pre>
+
+      <div class="code-label">setdefault</div>
+      <pre class="code-block"><code>d = {"a": 1}
+d.setdefault("b", 2)   # 不存在则设置
+d.setdefault("a", 99)  # 已存在则不变
+print(f"setdefault: {d}")</code></pre>
+
+      <div class="code-label">defaultdict</div>
+      <pre class="code-block"><code>from collections import defaultdict
+groups = defaultdict(list)
+for name, dept in [("Alice", "技术"), ("Bob", "市场"), ("Charlie", "技术")]:
+    groups[dept].append(name)
+print(f"分组: {dict(groups)}")</code></pre>
+
+      <h4>3.5 集合 set</h4>
+      <blockquote class="tip-block">
+        元素唯一，无序。用于<strong>去重</strong>和<strong>集合运算</strong>。
+      </blockquote>
+
+      <div class="code-label">去重</div>
+      <pre class="code-block"><code>nums = [1, 2, 2, 3, 3, 3, 4]
+unique = set(nums)
+print(f"去重: {unique}")</code></pre>
+
+      <div class="code-label">集合运算</div>
+      <pre class="code-block"><code>a = {1, 2, 3, 4, 5}
+b = {4, 5, 6, 7, 8}
+print(f"交集: {a & b}")
+print(f"并集: {a | b}")
+print(f"差集: {a - b}")
+print(f"对称差集: {a ^ b}")</code></pre>
+
+      <div class="code-label">成员判断（比 list 快很多）</div>
+      <pre class="code-block"><code>print(f"3 in a: {3 in a}")</code></pre>
+
+        <section class="download-box" aria-labelledby="dl-01">
+        <h2 id="dl-01" class="section-title">资料下载</h2>
+        <a class="btn btn-download" href="../assets/downloads/course-01/course-01-notes.txt"
+          download="course-01-notes.txt">下载第一节课资料</a>
+      </section>
+    </article>
+  </main>
+</body>
+
+</html>

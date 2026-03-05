@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>西南科技大学蓝鲸Sass开发课程 | 首页</title>
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="course-intro">
+      <h2 class="section-title">课程介绍</h2>
+      <div class="intro-card">
+        <p>本课程由学校与腾讯蓝鲸联合打造，旨在帮助学生全面了解并掌握 SaaS 开发的核心技能，以及蓝鲸平台的应用与实践。课程在原有基础上增设了 SaaS 开发基础知识前置模块，帮助大家夯实基础，顺利衔接后续内容。</p>
+
+        <div class="intro-modules">
+          <div class="intro-module">
+            <div class="module-header">
+              <span class="module-icon">🐍</span>
+              <div>
+                <span class="module-tag">前置课程</span>
+                <h3>Python 基础</h3>
+              </div>
+            </div>
+            <div class="skill-list">
+              <div class="skill-item">
+                <span class="skill-badge">语法</span>
+                <span>数据类型 · 输入输出 · 条件与循环 · 推导式</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">编程</span>
+                <span>数据结构 · 函数 · 面向对象编程</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">进阶</span>
+                <span>装饰器 · 异常处理 · 文件操作</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">并发</span>
+                <span>同步异步 · 多线程 · 协程</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">工程</span>
+                <span>HTTP 请求 · 日志系统 · 单元测试</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="intro-module">
+            <div class="module-header">
+              <span class="module-icon">🌐</span>
+              <div>
+                <span class="module-tag">前置课程</span>
+                <h3>Django 基础</h3>
+              </div>
+            </div>
+            <div class="skill-list">
+              <div class="skill-item">
+                <span class="skill-badge">架构</span>
+                <span>MTV 模式 · 环境搭建 · 项目结构</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">路由</span>
+                <span>URL 配置 · 视图函数 · ORM 操作</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">数据</span>
+                <span>模型定义 · 数据库迁移 · CRUD</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">认证</span>
+                <span>Admin 后台 · 用户认证 · Session 与 Cookie</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">接口</span>
+                <span>中间件 · RESTful API · RestFramework</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">扩展</span>
+                <span>权限控制 · 分页 · 异步与定时任务</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="intro-module">
+            <div class="module-header">
+              <span class="module-icon">🚀</span>
+              <div>
+                <span class="module-tag">核心课程</span>
+                <h3>蓝鲸应用开发</h3>
+              </div>
+            </div>
+            <div class="skill-list">
+              <div class="skill-item">
+                <span class="skill-badge">流程</span>
+                <span>SaaS 开发全流程 · 从初始化到部署上线</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">平台</span>
+                <span>蓝鲸 CMDB · 作业平台 · BKVision</span>
+              </div>
+              <div class="skill-item">
+                <span class="skill-badge">实战</span>
+                <span>Vue 3 + 蓝鲸框架 · 开发"游戏主机检测系统"</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="intro-summary">通过以上模块的学习，你将建立起扎实的 SaaS 开发基础，为深入蓝鲸平台开发做好充分准备。</p>
+      </div>
+    </section>
+
+    <section id="catalog" aria-labelledby="catalog-title" class="catalog-tree-wrap">
+      <h2 id="catalog-title" class="section-title">课程安排</h2>
+
+      <div class="catalog-tree" role="tree" aria-label="课程目录">
+        <details class="tree-group" open>
+          <summary class="tree-group-title" role="treeitem" aria-level="1">Python基础</summary>
+          <ul class="tree-list" role="group">
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-01.html">第一节课：课程介绍、AI工具与流程控制基础</a>
+            </li>
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-02.html">第二节课：函数、面向对象、并发与测试基础</a>
+            </li>
+          </ul>
+        </details>
+
+        <details class="tree-group" open>
+          <summary class="tree-group-title" role="treeitem" aria-level="1">Django基础</summary>
+          <ul class="tree-list" role="group">
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-03.html">第三节课：MTV架构、路由视图与ORM实操</a>
+            </li>
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-04.html">第四节课：认证鉴权、中间件与REST API</a>
+            </li>
+          </ul>
+        </details>
+
+        <details class="tree-group" open>
+          <summary class="tree-group-title" role="treeitem" aria-level="1">蓝鲸项目实战</summary>
+          <ul class="tree-list" role="group">
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-05.html">第五节课：云原生开发平台与SaaS应用部署</a>
+            </li>
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-06.html">第六节课：《蓝鲸配置平台》理论与实验</a>
+            </li>
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-07.html">第七节课：《蓝鲸作业平台》理论与实验</a>
+            </li>
+            <li class="tree-node" role="treeitem" aria-level="2">
+              <a href="courses/course-08.html">第八节课：《蓝鲸BKVision实战开发》理论与实验</a>
+            </li>
+          </ul>
+        </details>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
