@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
+
+import os
+import sys
+import json
+
+def list_file(path, indent=0):
+    names = []
+    cnt = 0
+    total_size = 0
+    if not os.path.exists(path):
+        data = {"message":"search_path not exists"}
+        return data
+    for filename in os.listdir(path):
+        full_path = os.path.join(path, filename)
+        suffix = "."+sys.argv[2]
+        if os.path.isfile(full_path) and filename.endswith(suffix):
+            names.append(filename)
+            cnt += 1
+            size = os.path.getsize(full_path)
+            total_size += size
+    names = ";".join(names)
+    data = {"bk_file_list": names, "bk_file_cnt": cnt, "bk_file_total_size":total_size}
+    return data
+
+if __name__ == "__main__":
+    search_path = sys.argv[1]
+    data = list_file(search_path)
+    print(json.dumps(data, indent=4))
