@@ -12,7 +12,7 @@
 <body>
   <header class="site-header">
     <div class="container nav">
-      <div class="brand">西南科技大学Sass开发课程</div>
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
       <nav class="nav-links">
         <a href="../index.html">首页</a>
         <a href="course-01.html" data-nav>第一节课</a>
@@ -585,6 +585,91 @@ print(f"对称差集: {a ^ b}")</code></pre>
 
       <div class="code-label">成员判断（比 list 快很多）</div>
       <pre class="code-block"><code>print(f"3 in a: {3 in a}")</code></pre>
+
+      <h3>4. 推导式</h3>
+      <blockquote class="tip-block">
+        推导式（Comprehension）是 Python 特有的简洁语法，可以用<strong>一行代码</strong>生成列表、字典、集合等，替代传统的 for 循环写法。
+      </blockquote>
+
+      <h4>4.1 列表推导式</h4>
+      <p>语法：<code>[表达式 for 变量 in 可迭代对象 if 条件]</code></p>
+
+      <div class="code-compare">
+        <div class="code-compare-col">
+          <div class="code-label">传统 for 循环</div>
+          <pre class="code-block"><code>squares = []
+for i in range(10):
+    squares.append(i ** 2)
+print(squares)</code></pre>
+        </div>
+        <div class="code-compare-col">
+          <div class="code-label">列表推导式（一行搞定）</div>
+          <pre class="code-block"><code>squares = [i ** 2 for i in range(10)]
+print(squares)</code></pre>
+        </div>
+      </div>
+
+      <div class="code-label">带条件过滤</div>
+      <pre class="code-block"><code># 取偶数的平方
+even_squares = [i ** 2 for i in range(10) if i % 2 == 0]
+print(f"偶数平方: {even_squares}")</code></pre>
+
+      <div class="code-label">带 if-else 的推导式</div>
+      <pre class="code-block"><code># if-else 放在 for 前面
+labels = ["偶数" if i % 2 == 0 else "奇数" for i in range(6)]
+print(f"标签: {labels}")</code></pre>
+
+      <div class="code-label">嵌套推导式（二维 → 一维）</div>
+      <pre class="code-block"><code>matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+flat = [x for row in matrix for x in row]
+print(f"展平: {flat}")</code></pre>
+
+      <h4>4.2 字典推导式</h4>
+      <p>语法：<code>{键表达式: 值表达式 for 变量 in 可迭代对象 if 条件}</code></p>
+
+      <div class="code-label">基本用法</div>
+      <pre class="code-block"><code># 单词 → 长度
+words = ["hello", "world", "python"]
+word_len = {w: len(w) for w in words}
+print(f"字典推导: {word_len}")</code></pre>
+
+      <div class="code-label">键值互换</div>
+      <pre class="code-block"><code>original = {"a": 1, "b": 2, "c": 3}
+swapped = {v: k for k, v in original.items()}
+print(f"互换: {swapped}")</code></pre>
+
+      <h4>4.3 集合推导式</h4>
+      <p>语法：<code>{表达式 for 变量 in 可迭代对象 if 条件}</code></p>
+
+      <div class="code-label">去重 + 转换</div>
+      <pre class="code-block"><code>text = "Hello World"
+unique_chars = {c.lower() for c in text if c.isalpha()}
+print(f"不重复字母: {unique_chars}")</code></pre>
+
+      <h4>4.4 生成器表达式</h4>
+      <blockquote class="tip-block">
+        将方括号 <code>[]</code> 换成圆括号 <code>()</code> 就变成<strong>生成器表达式</strong>，不会一次性生成所有元素，而是<strong>惰性求值</strong>，节省内存。
+      </blockquote>
+
+      <div class="code-label">生成器 vs 列表推导</div>
+      <pre class="code-block"><code># 列表推导 —— 立刻生成所有元素，占内存
+nums_list = [i ** 2 for i in range(1000000)]
+
+# 生成器表达式 —— 惰性求值，省内存
+nums_gen = (i ** 2 for i in range(1000000))
+
+print(f"列表大小: {nums_list.__sizeof__()} bytes")
+print(f"生成器大小: {nums_gen.__sizeof__()} bytes")</code></pre>
+
+      <div class="code-label">生成器配合内置函数</div>
+      <pre class="code-block"><code># 直接传给 sum / max / min，无需中间列表
+total = sum(i ** 2 for i in range(100))
+print(f"平方和: {total}")
+
+# 判断是否全部为正数
+nums = [3, 7, 1, 9, 5]
+print(f"全部为正: {all(n > 0 for n in nums)}")
+print(f"存在偶数: {any(n % 2 == 0 for n in nums)}")</code></pre>
 
         <section class="download-box" aria-labelledby="dl-01">
         <h2 id="dl-01" class="section-title">资料下载</h2>
