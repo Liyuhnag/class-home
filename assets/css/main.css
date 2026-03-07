@@ -752,6 +752,39 @@ p + .code-block {
   padding-top: 20px;
 }
 
+.env-panel a {
+  color: #1f7a58;
+}
+
+.env-panel a:hover {
+  color: #1f6b4f;
+}
+
+.setup-step {
+  margin: 12px 0 16px;
+  padding: 14px;
+  border: 1px solid #d9efdf;
+  border-radius: var(--radius-md);
+  background: #f5fcf8;
+}
+
+.env-panel .setup-step h4 {
+  margin: 0 0 10px;
+  padding-left: 0;
+}
+
+.env-panel .setup-step h4::before {
+  display: none;
+}
+
+.setup-step-image {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d7efe1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
 
 .footer {
   border-top: 1px solid #d7efe1;

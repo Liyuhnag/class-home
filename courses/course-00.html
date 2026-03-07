@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>第零课 | 西南科技大学蓝鲸Sass开发课程</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <script defer src="../assets/js/main.js"></script>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+      <nav class="nav-links">
+        <a href="../index.html">首页</a>
+        <a href="course-00.html" data-nav>第零课</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container course-layout">
+    <div class="breadcrumb"><a href="../index.html">首页</a> / 第零课</div>
+    <article class="panel env-panel">
+      <h1>第零课：课程环境搭建（Windows）</h1>
+      <div class="meta">课程主题：开课前统一安装并验证 Python、uv、PyCharm、Git（nvm 可选）</div>
+
+      <h2>课前完成清单</h2>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>工具</th>
+            <th>要求</th>
+            <th>优先级</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Python + uv</td>
+            <td>完成 uv 安装并执行过 <code>uv --version</code></td>
+            <td>必做</td>
+          </tr>
+          <tr>
+            <td>PyCharm</td>
+            <td>完成安装，可正常打开项目</td>
+            <td>必做</td>
+          </tr>
+          <tr>
+            <td>Git</td>
+            <td>完成安装并执行过 <code>git --version</code></td>
+            <td>必做</td>
+          </tr>
+          <tr>
+            <td>nvm</td>
+            <td>可先跳过，Django 最后一节课前补齐</td>
+            <td>可选</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>课程内容</h2>
+
+      <h3>1. Python 环境（必做）</h3>
+      <p>本课程统一使用 <code>uv</code> 管理 Python 和项目环境，减少版本冲突并降低课上网络波动影响。</p>
+
+      <h4>1.1 安装 uv</h4>
+      <div class="code-label">PowerShell 一键安装（推荐）</div>
+      <pre class="code-block"><code>powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"</code></pre>
+
+      <div class="code-label">安装后验证</div>
+      <pre class="code-block"><code>uv --version</code></pre>
+
+      <h4>1.2 常见报错处理</h4>
+      <blockquote class="tip-block">
+        如果出现 <code>uv.exe 正由另一进程使用</code> 的报错，先结束进程再重试安装。
+      </blockquote>
+      <div class="code-label">终止 uv 进程</div>
+      <pre class="code-block"><code>taskkill /F /IM uv.exe</code></pre>
+
+      <h4>1.3 初始化项目</h4>
+      <ol>
+        <li>新建一个空文件夹。</li>
+        <li>在该目录打开终端，执行以下命令。</li>
+      </ol>
+      <div class="code-label">初始化项目</div>
+      <pre class="code-block"><code>uv init</code></pre>
+
+      <h3>2. IDE（PyCharm）</h3>
+      <ul>
+        <li>当前阶段使用 PyCharm 社区版即可。</li>
+        <li>进入 Django 阶段后，建议升级专业版获得完整 Web 开发支持。</li>
+      </ul>
+
+      <h4>2.1 升级专业版方式</h4>
+      <ol>
+        <li>使用学生证或录取通知书到 JetBrains 官方申请学生认证。</li>
+        <li>使用学生邮箱申请学生权益。</li>
+        <li>若以上方式不便，可联系助教获取替代方案。</li>
+      </ol>
+
+      <h3>3. Git 安装（必做）</h3>
+      <p>当前阶段只要求先完成安装，具体 Git 操作会在课程中结合实操讲解。</p>
+      <ul>
+        <li>官网：<a href="https://git-scm.com/" target="_blank" rel="noopener">https://git-scm.com/</a></li>
+        <li>发行页：<a href="https://github.com/git-for-windows/git/releases" target="_blank" rel="noopener">https://github.com/git-for-windows/git/releases</a></li>
+        <li>推荐版本：<code>Git 2.40.0</code></li>
+      </ul>
+
+      <h4>3.1 安装步骤（按默认配置即可）</h4>
+
+      <div class="setup-step">
+        <h4>步骤 1：查看 GNU 协议，点击下一步</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps7.jpg" alt="Git 安装步骤 1" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 2：选择安装位置（建议非中文且无空格目录）</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps8.jpg" alt="Git 安装步骤 2" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 3：Git 选项配置保持默认</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps9.jpg" alt="Git 安装步骤 3" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 4：安装目录名保持默认</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps10.jpg" alt="Git 安装步骤 4" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 5：默认编辑器建议使用 Vim（默认值）</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps11.jpg" alt="Git 安装步骤 5" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 6：默认分支名设置保持默认（Let Git decide）</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps12.jpg" alt="Git 安装步骤 6" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 7：环境变量配置选择第一项（仅在 Git Bash 中使用 Git）</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps13.jpg" alt="Git 安装步骤 7" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 8：后台客户端连接协议使用默认 OpenSSL</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps14.jpg" alt="Git 安装步骤 8" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 9：行尾换行符设置选择第一项（自动转换）</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps15.jpg" alt="Git 安装步骤 9" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 10：终端类型选择默认 Git Bash</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps16.jpg" alt="Git 安装步骤 10" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 11：git pull 合并模式选择默认</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps17.jpg" alt="Git 安装步骤 11" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 12：凭据管理器选择默认跨平台管理器</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps18.jpg" alt="Git 安装步骤 12" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 13：其他配置保持默认</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps19.jpg" alt="Git 安装步骤 13" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 14：实验性功能不勾选，点击 Install</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps20.jpg" alt="Git 安装步骤 14" />
+      </div>
+
+      <div class="setup-step">
+        <h4>步骤 15：点击 Finish，完成安装</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/wps21.jpg" alt="Git 安装步骤 15" />
+      </div>
+
+      <h4>3.2 安装完成验证</h4>
+      <ol>
+        <li>在任意目录右键，选择 <code>Git Bash Here</code> 打开终端。</li>
+        <li>执行 <code>git --version</code>，出现版本号即安装成功。</li>
+      </ol>
+
+      <div class="setup-step">
+        <h4>Git Bash Here 入口</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/git-bash-here.png" alt="Git Bash Here 入口" />
+      </div>
+
+      <div class="code-label">版本验证命令</div>
+      <pre class="code-block"><code>git --version</code></pre>
+
+      <div class="setup-step">
+        <h4>Git 版本验证示例</h4>
+        <img class="setup-step-image" src="../环境搭建/assets/image-20230627170844640.png" alt="Git 版本验证结果" />
+      </div>
+
+      <h3>4. nvm 安装（可选）</h3>
+      <blockquote class="tip-block">
+        如果当前时间紧张，可以先跳过 nvm，在 Django 最后一节课前补齐即可。
+      </blockquote>
+      <p>参考教程：<a href="https://www.freecodecamp.org/chinese/news/nvm-for-windows-how-to-download-and-install-node-version-manager-in-windows-10/"
+          target="_blank" rel="noopener">nvm 安装教程（Windows）</a></p>
+      <p>简化结论：安装过程中基本保持默认，按提示下一步即可。</p>
+
+      <section class="download-box" aria-labelledby="check-00">
+        <h2 id="check-00" class="section-title">课前自检</h2>
+        <p>确保以下命令都能在终端正常执行并输出版本号：</p>
+        <div class="code-label">环境自检命令</div>
+        <pre class="code-block"><code>uv --version
+git --version</code></pre>
+      </section>
+    </article>
+  </main>
+</body>
+
+</html>
