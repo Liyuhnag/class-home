@@ -37,6 +37,28 @@
       <blockquote class="tip-block">生产代码不应使用 <code>print()</code> 调试，而应使用 <code>logging</code> 模块——它提供级别控制、格式化和多输出目标。</blockquote>
 
       <h2>1. print vs logging</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>print vs logging 代码对比</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code># ❌ 用 print（不推荐）
+print("用户登录")
+print("ERROR: 数据库连接失败")
+
+# ✅ 用 logging（推荐）
+import logging
+logger = logging.getLogger(__name__)
+logger.info("用户登录")
+logger.error("数据库连接失败")
+
+# 配置日志
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)</code></pre>
+      </div>
       <table class="compare-table">
         <thead><tr><th>对比</th><th><code>print()</code></th><th><code>logging</code></th></tr></thead>
         <tbody>
@@ -71,6 +93,33 @@
       </div>
 
       <h2>3. 业务代码中的日志</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>业务代码日志最佳实践</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>import logging
+logger = logging.getLogger(__name__)
+
+class OrderService:
+    def process_order(self, order_id, amount):
+        logger.info(f"处理订单 #{order_id}, 金额: {amount}")
+        
+        # 验证
+        if amount <= 0:
+            logger.error(f"订单 #{order_id} 金额无效: {amount}")
+            raise ValueError("金额必须大于 0")
+        
+        # 警告
+        if amount > 10000:
+            logger.warning(f"订单 #{order_id} 大额交易: {amount}")
+        
+        # 处理逻辑
+        try:
+            result = self.charge(amount)
+            logger.info(f"订单 #{order_id} 处理完成")
+            return result
+        except Exception as e:
+            logger.exception(f"订单 #{order_id} 处理失败")  # 自动附加 traceback
+            raise</code></pre>
+      </div>
       <div class="demo-card">
         <div class="demo-header"><span>🏪</span><span>订单处理日志演示</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">

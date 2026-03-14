@@ -115,13 +115,15 @@
       <a class="btn" href="../demos/functions-demo.html">▶ 查看 Python 函数交互演示</a>
 
       <div class="exercise-block">
-        <h4>🏋️ 练习题 — 函数</h4>
+        <h4>🏋️ 练习题 — 函数与装饰器</h4>
         <ul class="exercise-list">
           <li data-num="1"><span class="exercise-tag tag-easy">入门</span>写一个函数 <code>calc(a, b, op='+')</code>，支持加减乘除四种运算，<code>op</code> 默认为加法。<span class="hint">提示：用 if-elif 判断 op 的值，注意除零异常。</span></li>
           <li data-num="2"><span class="exercise-tag tag-easy">入门</span>写一个函数 <code>flatten(*args)</code>，接收任意数量的列表并把它们合并成一个列表返回。<span class="hint">提示：用 *args 接收多个列表，用 + 或 extend 合并。</span></li>
-          <li data-num="3"><span class="exercise-tag tag-medium">进阶</span>利用闭包实现一个 <code>make_multiplier(n)</code>，返回一个函数，该函数将输入乘以 n。例如 <code>double = make_multiplier(2); double(5) == 10</code>。<span class="hint">提示：外层函数接收 n，内层函数捕获 n 形成闭包。</span></li>
-          <li data-num="4"><span class="exercise-tag tag-medium">进阶</span>用 <code>map</code> + <code>filter</code> + <code>lambda</code> 完成：给定学生列表 <code>[{'name':'Alice','score':90}, ...]</code>，筛选及格（≥60）的学生，按分数降序，返回姓名列表。<span class="hint">提示：filter 筛选 → sorted 排序 → map 取名字，全部用 lambda。</span></li>
-          <li data-num="5"><span class="exercise-tag tag-hard">挑战</span>实现一个 <code>memoize</code> 装饰器（用闭包），让斐波那契函数 <code>fib(40)</code> 在毫秒内完成。要求不使用 <code>functools.lru_cache</code>。<span class="hint">提示：闭包捕获一个 dict 作为缓存，key 是参数，value 是结果。</span></li>
+          <li data-num="3"><span class="exercise-tag tag-easy">入门</span>写一个 <code>log_call</code> 装饰器，在函数执行前后分别打印「开始执行 xxx」和「执行完毕 xxx」。<span class="hint">提示：用 @wraps(func) 保留原函数名，通过 func.__name__ 获取名字。</span></li>
+          <li data-num="4"><span class="exercise-tag tag-medium">进阶</span>利用闭包实现 <code>make_multiplier(n)</code>；再用装饰器语法将其改写为 <code>@scale(n)</code> 装饰器，使被装饰函数的返回值乘以 n。<span class="hint">提示：闭包版直接返回内层函数；装饰器版外层接收 n，中层接收 func，内层调用 func 后乘以 n。</span></li>
+          <li data-num="5"><span class="exercise-tag tag-medium">进阶</span>写一个带参数的 <code>@repeat(n)</code> 装饰器，让被装饰函数重复执行 n 次。<span class="hint">提示：需要三层嵌套：repeat(n) → decorator(func) → wrapper(*args, **kwargs)。</span></li>
+          <li data-num="6"><span class="exercise-tag tag-medium">进阶</span>用 <code>map</code> + <code>filter</code> + <code>lambda</code> 完成：给定学生列表，筛选及格（≥60）的学生，按分数降序，返回姓名列表。<span class="hint">提示：filter 筛选 → sorted 排序 → map 取名字，全部用 lambda。</span></li>
+          <li data-num="7"><span class="exercise-tag tag-hard">挑战</span>实现一个 <code>memoize</code> 装饰器（用闭包捕获 dict 作缓存），让 <code>fib(40)</code> 在毫秒内完成，不使用 <code>functools.lru_cache</code>。<span class="hint">提示：闭包捕获一个 dict，key 是参数，value 是结果；wrapper 里先查缓存再计算。</span></li>
         </ul>
       </div>
 
@@ -141,24 +143,8 @@
         </ul>
       </div>
 
-            <!-- ==================== 3. 装饰器 ==================== -->
-      <h3>3. 装饰器</h3>
-      <p>本节内容包含交互式动画演示，专为有 C 语言基础的同学设计，点击下方按钮前往独立演示页面：</p>
-      <a class="btn" href="../demos/decorator-demo.html">▶ 查看 Python 装饰器交互演示</a>
-
-      <div class="exercise-block">
-        <h4>🏋️ 练习题 — 装饰器</h4>
-        <ul class="exercise-list">
-          <li data-num="1"><span class="exercise-tag tag-easy">入门</span>写一个 <code>log_call</code> 装饰器，在函数执行前后分别打印「开始执行 xxx」和「执行完毕 xxx」。<span class="hint">提示：用 @wraps(func) 保留原函数名，通过 func.__name__ 获取名字。</span></li>
-          <li data-num="2"><span class="exercise-tag tag-easy">入门</span>写一个 <code>timer</code> 装饰器，打印函数执行耗时（用 <code>time.perf_counter()</code>）。用它装饰一个计算 1~N 之和的函数。<span class="hint">提示：在 wrapper 内记录开始时间，函数执行后计算差值。</span></li>
-          <li data-num="3"><span class="exercise-tag tag-medium">进阶</span>写一个带参数的 <code>@repeat(n)</code> 装饰器，让被装饰函数重复执行 n 次。<span class="hint">提示：需要三层嵌套：repeat(n) → decorator(func) → wrapper(*args, **kwargs)。</span></li>
-          <li data-num="4"><span class="exercise-tag tag-medium">进阶</span>写一个 <code>@validate_args</code> 装饰器，检查被装饰函数的所有参数是否不为 <code>None</code>，若有 <code>None</code> 则抛出 <code>ValueError</code> 并指明哪个参数为空。<span class="hint">提示：用 <code>func.__code__.co_varnames</code> 获取参数名，zip 对应 args 值逐一检查。</span></li>
-          <li data-num="5"><span class="exercise-tag tag-hard">挑战</span>实现一个 <code>@retry(max_retries, exceptions)</code> 带参数装饰器，在指定异常发生时自动重试，超过次数后重新抛出异常，并打印每次重试的次数和错误信息。<span class="hint">提示：三层嵌套，exceptions 是异常类型元组，用 for attempt in range(max_retries) 控制重试。</span></li>
-        </ul>
-      </div>
-
-            <!-- ==================== 4. 异常处理 ==================== -->
-      <h3>4. 异常处理</h3>
+      <!-- ==================== 3. 异常处理 ==================== -->
+      <h3>3. 异常处理</h3>
       <p>本节内容包含交互式动画演示，专为有 C 语言基础的同学设计，点击下方按钮前往独立演示页面：</p>
       <a class="btn" href="../demos/exception-demo.html">▶ 查看 Python 异常处理交互演示</a>
 
@@ -173,8 +159,8 @@
         </ul>
       </div>
 
-            <!-- ==================== 5. 文件操作 ==================== -->
-      <h3>5. 文件操作</h3>
+            <!-- ==================== 4. 文件操作 ==================== -->
+      <h3>4. 文件操作</h3>
       <p>本节内容包含交互式动画演示，点击下方按钮前往独立演示页面：</p>
       <a class="btn" href="../demos/file-demo.html">▶ 查看 Python 文件操作交互演示</a>
 
@@ -189,8 +175,8 @@
         </ul>
       </div>
 
-      <!-- ==================== 6. 同步与异步编程 ==================== -->
-      <h3>6. 同步与异步编程</h3>
+      <!-- ==================== 5. 同步与异步编程 ==================== -->
+      <h3>5. 同步与异步编程</h3>
       <p>本节内容包含交互式动画演示，点击下方按钮前往独立演示页面：</p>
       <a class="btn" href="../demos/async-demo.html">▶ 查看同步与异步交互演示</a>
 
@@ -203,8 +189,8 @@
         </ul>
       </div>
 
-      <!-- ==================== 7. 并发编程 ==================== -->
-      <h3>7. 并发编程</h3>
+      <!-- ==================== 6. 并发编程 ==================== -->
+      <h3>6. 并发编程</h3>
       <p>本节内容包含交互式动画演示，点击下方按钮前往独立演示页面：</p>
       <a class="btn" href="../demos/concurrency-demo.html">▶ 查看并发编程交互演示</a>
 
@@ -218,7 +204,7 @@
       </div>
 
       <!-- ==================== 8. HTTP与网络请求 ==================== -->
-      <h3>8. HTTP 与网络请求</h3>
+      <h3>7. HTTP 与网络请求</h3>
       <p>本节内容包含交互式动画演示，点击下方按钮前往独立演示页面：</p>
       <a class="btn" href="../demos/http-demo.html">▶ 查看 HTTP 与网络请求交互演示</a>
 
@@ -231,8 +217,8 @@
         </ul>
       </div>
 
-      <!-- ==================== 9. 日志系统 ==================== -->
-      <h3>9. 日志系统</h3>
+      <!-- ==================== 8. 日志系统 ==================== -->
+      <h3>8. 日志系统</h3>
       <p>本节内容包含交互式动画演示，点击下方按钮前往独立演示页面：</p>
       <a class="btn" href="../demos/logging-demo.html">▶ 查看 Python 日志系统交互演示</a>
 
@@ -245,8 +231,8 @@
         </ul>
       </div>
 
-      <!-- ==================== 10. 单元测试 ==================== -->
-      <h3>10. 单元测试</h3>
+      <!-- ==================== 9. 单元测试 ==================== -->
+      <h3>9. 单元测试</h3>
       <p>本节内容包含交互式动画演示，点击下方按钮前往独立演示页面：</p>
       <a class="btn" href="../demos/testing-demo.html">▶ 查看单元测试与 pytest 交互演示</a>
 

@@ -63,6 +63,27 @@
         C 用 <code>if (ret < 0) return -1;</code> 逐级传递错误，Python 用 <code>raise</code> 直接跳转到最近的 <code>except</code>，代码更简洁。
       </div>
       <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>try-except-else-finally 代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>try:
+    result = 10 / 2      # 可能出错的代码
+except ZeroDivisionError:
+    print("除数不能为 0")   # 仅在异常时执行
+except ValueError as e:
+    print(f"值错误: {e}")
+else:
+    print(f"计算成功: {result}")  # 仅在无异常时执行
+finally:
+    print("[清理完毕]")           # 始终执行
+
+# ✅ 无异常时输出:
+# 计算成功: 5.0
+# [清理完毕]
+
+# ❌ 有异常时输出:
+# 除数不能为 0
+# [清理完毕]</code></pre>
+      </div>
+      <div class="demo-card">
         <div class="demo-header"><span>🔀</span><span>try-except-else-finally 执行流程</span></div>
         <p style="color:var(--gd);margin-bottom:12px">选择场景，观察各子句的执行顺序</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
@@ -85,6 +106,36 @@
 
       <h2>2. 常见异常类型</h2>
       <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>常见异常代码示例</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code># ValueError — 值不合法
+try: int("abc")
+except ValueError as e: print(f"ValueError: {e}")
+
+# TypeError — 类型不匹配
+try: "a" + 1
+except TypeError as e: print(f"TypeError: {e}")
+
+# IndexError — 越界
+try: [1,2,3][9]
+except IndexError as e: print(f"IndexError: {e}")
+
+# KeyError — 字典键不存在
+try: {'a':1}['b']
+except KeyError as e: print(f"KeyError: {e}")
+
+# ZeroDivisionError — 除以零
+try: 1 / 0
+except ZeroDivisionError: print("ZeroDivisionError")
+
+# FileNotFoundError — 文件不存在
+try: open('missing.txt')
+except FileNotFoundError as e: print(f"FileNotFoundError: {e}")
+
+# AttributeError — 属性不存在
+try: None.strip()
+except AttributeError as e: print(f"AttributeError: {e}")</code></pre>
+      </div>
+      <div class="demo-card">
         <div class="demo-header"><span>🌳</span><span>异常继承树（点击查看触发示例）</span></div>
         <div style="display:flex;gap:20px;flex-wrap:wrap;">
           <div class="exc-tree" style="flex:1;min-width:220px;">
@@ -105,15 +156,63 @@
       </div>
 
       <h2>3. raise 与自定义异常</h2>
+      <div class="analogy-box"><strong>💡 自定义异常 = 继承 Exception 的类</strong>给异常附带业务字段，让调用者能精确处理错误。</div>
       <div class="demo-card">
-        <div class="demo-header"><span>🏦</span><span>InsufficientFundsError 自定义异常演示</span></div>
+        <div class="demo-header"><span>📋</span><span>自定义异常代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code># 1. 定义自定义异常类
+class InsufficientFundsError(Exception):
+    def __init__(self, balance, amount):
+        self.balance = balance
+        self.amount  = amount
+        super().__init__(f"余额不足: 当前 {balance}，尝试取款 {amount}，差额 {amount - balance}")
+
+class InvalidAmountError(ValueError):
+    def __init__(self, amount):
+        super().__init__(f"取款金额必须大于 0，收到: {amount}")
+
+# 2. 使用 raise 抛出
+class BankAccount:
+    def __init__(self, balance=1000):
+        self.balance = balance
+
+    def withdraw(self, amount):
+        if amount <= 0:
+            raise InvalidAmountError(amount)       # raise 子类
+        if amount > self.balance:
+            raise InsufficientFundsError(self.balance, amount)
+        self.balance -= amount
+        return self.balance
+
+# 3. 调用方捕获
+account = BankAccount(1000)
+try:
+    account.withdraw(1500)
+except InsufficientFundsError as e:
+    print(f"业务异常: {e}")          # 余额不足: 当前 1000，尝试取款 1500，差额 500
+except InvalidAmountError as e:
+    print(f"参数异常: {e}")</code></pre>
+      </div>
+      <div class="demo-card">
+        <div class="demo-header"><span>🏦</span><span>InsufficientFundsError 交互演示</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
           <button class="run-btn" onclick="runWithdraw(500)">取款 500（成功）</button>
           <button class="run-btn" onclick="runWithdraw(1500)" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">取款 1500（余额不足）</button>
           <button class="run-btn" onclick="runWithdraw(-50)" style="background:linear-gradient(135deg,#e67e22,#d35400)">取款 -50（非法金额）</button>
-          <button class="run-btn" onclick="document.getElementById('raiseLog').innerHTML=''" style="background:#95a5a6">清空</button>
+          <button class="run-btn" onclick="document.getElementById('raiseLog').innerHTML='';balance=1000;" style="background:#95a5a6">重置余额</button>
         </div>
         <div id="raiseLog" class="log-box">点击按钮测试异常抛出…</div>
+      </div>
+
+      <div class="key-point"><strong>🎯 raise 三种用法：</strong>
+        <code>raise ValueError("msg")</code> 抛出新异常 |
+        <code>raise</code>（无参）在 except 块内重新抛出当前异常 |
+        <code>raise RuntimeError("包装") from e</code> 异常链，保留原始 <code>__cause__</code>
+      </div>
+
+      <div class="key-point"><strong>🎯 raise 三种用法：</strong>
+        <code>raise ValueError("msg")</code> 抛出新异常 |
+        <code>raise</code>（无参）在 except 块内重新抛出当前异常 |
+        <code>raise RuntimeError("包装") from e</code> 异常链，保留原始 <code>__cause__</code>
       </div>
 
       <h2>4. 最佳实践</h2>

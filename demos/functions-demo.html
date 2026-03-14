@@ -227,7 +227,72 @@ for i in range(3):
         </div>
       </div>
 
-      <h2>7. Lambda 与高阶函数</h2>
+      <h2 id="closure-to-decorator">7. 闭包 + 装饰器：从闭包到装饰器只差一步</h2>
+      <div class="analogy-box"><strong>💡 装饰器就是「接收函数的闭包工厂」</strong>
+        闭包捕获外层变量；装饰器是特殊闭包，捕获的外层变量恰好是「原函数」。<br>
+        <code>@decorator</code> 等价于 <code>func = decorator(func)</code>——用闭包把原函数「包」起来再替换掉它。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header"><span>🔄</span> 从闭包演变到装饰器步进器</div>
+        <div class="stepper-controls">
+          <button class="step-btn" id="c2dPrev">← 上一步</button>
+          <span class="step-info" id="c2dInfo">步骤 1/4</span>
+          <button class="step-btn" id="c2dNext">下一步 →</button>
+          <button class="step-btn" id="c2dReset" style="margin-left:auto">重置</button>
+        </div>
+        <div class="exec-panel">
+          <div class="exec-code" id="c2dCode"></div>
+          <div class="exec-output" id="c2dVis"></div>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header"><span>🧪</span> 闭包 memoize 装饰器实战</div>
+        <p style="color:var(--gd);margin-bottom:12px">用闭包实现缓存装饰器，让递归斐波那契从指数时间变成线性时间</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px"><pre class="code-block" style="font-size:12px"><code># 闭包充当装饰器
+def memoize(func):
+    cache = {}      # 闭包捕获的变量
+    def wrapper(n):
+        if n not in cache:
+            cache[n] = func(n)  # 首次计算
+        return cache[n]         # 命中缓存
+    return wrapper
+
+@memoize
+def fib(n):
+    if n <= 1: return n
+    return fib(n-1) + fib(n-2)
+
+print(fib(40))  # 毫秒内完成</code></pre></div>
+          <div style="flex:1;min-width:180px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="run-btn" onclick="runMemoFib(10)">fib(10)</button>
+              <button class="run-btn" onclick="runMemoFib(30)" style="background:linear-gradient(135deg,#2980b9,#1a5276)">fib(30)</button>
+              <button class="run-btn" onclick="runMemoFib(40)" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">fib(40)</button>
+              <button class="run-btn" onclick="document.getElementById('memoLog').innerHTML=''" style="background:#95a5a6">清空</button>
+            </div>
+            <div id="memoLog" style="background:var(--gc);border:1.5px solid var(--gbr);border-radius:8px;padding:12px;font-family:monospace;font-size:13px;color:var(--gd);min-height:80px">点击按钮运行…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="key-point">
+        <strong>🎯 对比总结：</strong>
+        <table class="compare-table" style="margin-top:10px">
+          <thead><tr><th></th><th>闭包</th><th>装饰器</th></tr></thead>
+          <tbody>
+            <tr><td>本质</td><td>函数 + 捕获变量</td><td>接收函数的闭包工厂</td></tr>
+            <tr><td>捕获的是</td><td>外层的普通变量</td><td>外层的函数参数</td></tr>
+            <tr><td>用途</td><td>保持私有状态</td><td>增强/替换原函数</td>
+            </tr>
+            <tr><td>语法</td><td>直接调用</td><td><code>@decorator</code> 语法糖</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>8. Lambda 与高阶函数</h2>
       <div class="analogy-box"><strong>💡 函数是「一等公民」</strong>Python 函数可以像变量一样赋值、传参、返回。Lambda 是不用 def 命名的一次性函数。</div>
       <div class="demo-card">
         <div class="demo-header">⚡ 高阶函数演示</div>
@@ -240,7 +305,7 @@ for i in range(3):
         <div id="hofVis"></div>
       </div>
 
-      <h2>8. 类型注解</h2>
+      <h2>9. 类型注解</h2>
       <div class="analogy-box"><strong>💡 注解是可选的</strong>Python 类型注解运行时不强制检查，但 IDE 用它做代码提示和静态分析。</div>
       <div class="compare-split">
         <div class="compare-panel"><h4>C（强制）</h4><pre class="code-block" style="font-size:12px"><code>int add(int a, int b){return a+b;}
@@ -254,7 +319,7 @@ def greet(name: str, n: int=1) -&gt; list[str]:
     return [f"Hi {name}!"] * n</code></pre></div>
       </div>
 
-      <h2>9. 完整代码参考</h2>
+      <h2>10. 完整代码参考</h2>
       <div class="code-label">参数类型完整示例</div>
       <pre class="code-block"><code>def full_example(pos1, pos2, default1="hello", *args, kw_only, **kwargs):
     print(f"位置参数: {pos1}, {pos2}")
@@ -390,6 +455,123 @@ print(fib(40))  # 瞬间完成</code></pre>
   const hofData={sort:{title:'sort + lambda',code:'students = [("Alice",90),("Bob",78),("Carol",85)]\nstudents.sort(key=lambda s: s[1], reverse=True)\n# → [("Alice",90),("Carol",85),("Bob",78)]',note:'key 参数接受一个函数，lambda s: s[1] 取每个元素的第二项作为排序键。'},map:{title:'map — 对每个元素应用函数',code:'nums = [1,2,3,4,5]\ndoubled = list(map(lambda x: x*2, nums))\n# → [2,4,6,8,10]',note:'map 返回一个惰性迭代器，需要 list() 转换。相当于 [x*2 for x in nums]。'},filter:{title:'filter — 筛选满足条件的元素',code:'nums = [1,2,3,4,5,6]\nevens = list(filter(lambda x: x%2==0, nums))\n# → [2,4,6]',note:'filter 只保留函数返回 True 的元素。相当于 [x for x in nums if x%2==0]。'},reduce:{title:'reduce — 累积计算',code:'from functools import reduce\nnums = [1,2,3,4,5]\nproduct = reduce(lambda a,b: a*b, nums)\n# → 120  (1×2×3×4×5)',note:'reduce 从左到右累积：f(f(f(1,2),3),4),5)。C 中需要写 for 循环实现。'}};
   function showHof(t){const d=hofData[t];document.getElementById('hofVis').innerHTML=`<div style="background:#fff;border:1.5px solid var(--gbr);border-radius:8px;padding:16px"><div style="font-weight:600;color:var(--gd);margin-bottom:8px">${d.title}</div><pre class="code-block" style="font-size:12px;margin:0 0 10px"><code>${d.code}</code></pre><div style="background:var(--gl);border-left:3px solid var(--gb);padding:6px 12px;border-radius:4px;font-size:13px;color:var(--gd)">${d.note}</div></div>`;}
   showHof('sort');
+
+  // ==================== Closure → Decorator Stepper ====================
+  ;(function(){
+    const stages = [
+      {
+        label: '① 普通闭包',
+        code: [
+          'def make_adder(n):      # 外层函数',
+          '    def add(x):          # 内层函数',
+          '        return x + n     # 捕获 n',
+          '    return add',
+          '',
+          'add5 = make_adder(5)    # 创建闭包',
+          'add5(3)  # → 8',
+        ],
+        activeLines: [0,1,2],
+        vis: '<p style="color:var(--gd)"><strong>① 普通闭包</strong></p><p>外层函数接收普通参数 <code>n</code>，内层函数捕获它。<br>直接调用 <code>make_adder(5)</code> 得到一个「加5器」。</p><div style="background:var(--gl);border:1px solid var(--gbr);border-radius:6px;padding:10px;margin-top:8px;font-family:monospace">make_adder(5) → add 闭包（捕获 n=5）</div>'
+      },
+      {
+        label: '② 把函数作为参数',
+        code: [
+          'def timer(func):        # 外层接收「函数」',
+          '    def wrapper(*args): # 内层函数',
+          '        t = time.time()',
+          '        result = func(*args)  # 调用原函数',
+          '        print(f"耗时: {time.time()-t:.4f}s")',
+          '        return result',
+          '    return wrapper      # 返回闭包',
+        ],
+        activeLines: [0],
+        vis: '<p style="color:var(--gd)"><strong>② 把函数作为参数</strong></p><p>闭包工厂的参数从普通值变成了「函数」。<br>wrapper 闭包捕获 <code>func</code>（原函数），在执行前后加计时。</p><div style="background:var(--gl);border:1px solid var(--gbr);border-radius:6px;padding:10px;margin-top:8px;font-family:monospace">timer(slow_sum) → wrapper 闭包（捕获 func=slow_sum）</div>'
+      },
+      {
+        label: '③ 手动替换函数',
+        code: [
+          'def timer(func):',
+          '    def wrapper(*args):',
+          '        t = time.time()',
+          '        result = func(*args)',
+          '        print(f"耗时: {time.time()-t:.4f}s")',
+          '        return result',
+          '    return wrapper',
+          '',
+          'def slow_sum(n): return sum(range(n))',
+          '',
+          '# 手动替换：把 slow_sum 换成 wrapper',
+          'slow_sum = timer(slow_sum)',
+          'slow_sum(1_000_000)  # 实际调用 wrapper',
+        ],
+        activeLines: [11, 12],
+        vis: '<p style="color:var(--gd)"><strong>③ 手动替换函数</strong></p><p>调用 <code>timer(slow_sum)</code> 得到 wrapper，再赋值回 slow_sum。<br>从此 <code>slow_sum</code> 指向 wrapper，原函数被「包裹」。</p><div style="background:var(--gl);border:2px solid var(--gb);border-radius:6px;padding:10px;margin-top:8px;font-family:monospace">slow_sum → wrapper（闭包，持有原 slow_sum）</div>'
+      },
+      {
+        label: '④ @语法糖 = 装饰器',
+        code: [
+          'def timer(func):',
+          '    def wrapper(*args):',
+          '        t = time.time()',
+          '        result = func(*args)',
+          '        print(f"耗时: {time.time()-t:.4f}s")',
+          '        return result',
+          '    return wrapper',
+          '',
+          '@timer              # ← 等价于 slow_sum = timer(slow_sum)',
+          'def slow_sum(n):',
+          '    return sum(range(n))',
+          '',
+          'slow_sum(1_000_000)',
+        ],
+        activeLines: [8],
+        vis: '<p style="color:var(--gd)"><strong>④ @timer 语法糖</strong></p><p><code>@timer</code> 是第③步的简写，Python 看到它就自动执行：</p><div style="background:var(--gl);border:2px solid var(--gb);border-radius:6px;padding:10px;margin-top:8px;font-family:monospace">slow_sum = timer(slow_sum)</div><p style="margin-top:10px"><strong>结论：装饰器 = 以函数为参数的闭包工厂 + @语法糖</strong></p>'
+      },
+    ];
+    let cur = 0;
+    const codeEl = document.getElementById('c2dCode');
+    const visEl  = document.getElementById('c2dVis');
+    const info   = document.getElementById('c2dInfo');
+    const prevBtn = document.getElementById('c2dPrev');
+    const nextBtn = document.getElementById('c2dNext');
+    document.getElementById('c2dReset').onclick = () => { cur=0; render(); };
+    prevBtn.onclick = () => { if(cur>0){ cur--; render(); } };
+    nextBtn.onclick = () => { if(cur<stages.length-1){ cur++; render(); } };
+    function render(){
+      const s = stages[cur];
+      info.textContent = `步骤 ${cur+1}/${stages.length}：${s.label}`;
+      prevBtn.disabled = cur === 0;
+      nextBtn.disabled = cur === stages.length-1;
+      codeEl.innerHTML = s.code.map((l,i) =>
+        `<div class="line${s.activeLines.includes(i)?' active':''}">${l||'&nbsp;'}</div>`
+      ).join('');
+      visEl.innerHTML = s.vis;
+    }
+    render();
+  })();
+
+  // ==================== Memoize decorator demo ====================
+  ;(function(){
+    const cache = {};
+    function fib(n){
+      if(cache[n] !== undefined) return cache[n];
+      if(n <= 1) return n;
+      return cache[n] = fib(n-1) + fib(n-2);
+    }
+    window.runMemoFib = function(n){
+      const log = document.getElementById('memoLog');
+      Object.keys(cache).forEach(k => delete cache[k]); // reset
+      const t0 = performance.now();
+      const result = fib(n);
+      const ms = (performance.now()-t0).toFixed(3);
+      const hits = Object.keys(cache).length;
+      log.innerHTML += `<div style="animation:fadeIn .3s;color:var(--gd);margin-bottom:4px">`
+        + `<span style="color:var(--gm)">fib(${n})</span> = <strong>${result}</strong>`
+        + ` &nbsp;|&nbsp; 缓存条目: ${hits} &nbsp;|&nbsp; 耗时: ${ms}ms`
+        + `<span style="color:#888;font-size:11px;margin-left:8px">（闭包 cache={} 被 wrapper 持有）</span></div>`;
+    };
+  })();
+
   </script>
 </body>
 </html>  

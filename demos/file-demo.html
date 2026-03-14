@@ -42,6 +42,26 @@
         </tbody>
       </table>
       <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>文件读写代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code># 写入（清空重写）
+with open('demo.txt', 'w', encoding='utf-8') as f:
+    f.write('第一行内容\n')
+    f.write('第二行内容\n')
+
+# 追加
+with open('demo.txt', 'a', encoding='utf-8') as f:
+    f.write('追加一行\n')
+
+# 读取全部
+with open('demo.txt', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# 逐行读取
+with open('demo.txt', 'r', encoding='utf-8') as f:
+    for line in f:          # 内存友好，适合大文件
+        print(line.strip())</code></pre>
+      </div>
+      <div class="demo-card">
         <div class="demo-header"><span>📄</span><span>虚拟文件操作演示</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
           <button class="run-btn" onclick="fileOp('w')">写入 'w'</button>
@@ -56,6 +76,27 @@
       </div>
       <h2>2. JSON 文件处理</h2>
       <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>JSON 读写代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>import json
+
+# 写入 JSON
+data = {'name': 'Alice', 'age': 20, 'courses': ['Python', 'Math'], 'graduated': False}
+with open('student.json', 'w', encoding='utf-8') as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+
+# 读取 JSON
+with open('student.json', 'r', encoding='utf-8') as f:
+    loaded = json.load(f)
+print(loaded['name'])      # Alice
+print(loaded['courses'])   # ['Python', 'Math']
+
+# 修改后写回
+loaded['age'] += 1
+loaded['courses'].append('Django')
+with open('student.json', 'w', encoding='utf-8') as f:
+    json.dump(loaded, f, ensure_ascii=False, indent=2)</code></pre>
+      </div>
+      <div class="demo-card">
         <div class="demo-header"><span>🗂</span><span>JSON 读写演示</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
           <button class="run-btn" onclick="jsonOp('write')">json.dump()</button>
@@ -66,6 +107,26 @@
       </div>
       <h2>3. CSV 处理</h2>
       <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>CSV 读写代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>import csv
+
+# 写入 CSV
+students = [
+    {'name': 'Alice', 'age': 20, 'score': 90},
+    {'name': 'Bob',   'age': 21, 'score': 85},
+]
+with open('students.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.DictWriter(f, fieldnames=['name', 'age', 'score'])
+    writer.writeheader()
+    writer.writerows(students)
+
+# 读取 CSV
+with open('students.csv', 'r', encoding='utf-8') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(row['name'], row['score'])  # Alice 90</code></pre>
+      </div>
+      <div class="demo-card">
         <div class="demo-header"><span>📊</span><span>CSV 读写演示</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
           <button class="run-btn" onclick="csvOp('write')">csv.writer 写入</button>
@@ -75,13 +136,85 @@
       </div>
       <h2>4. 上下文管理器</h2>
       <div class="analogy-box"><strong>💡 C 的 fopen/fclose vs Python with</strong>
-        C 需要手动 fclose，Python with 自动调用 __exit__，即使异常也关闭。
+        C 需要手动 <code>fclose</code>，Python <code>with</code> 自动调用 <code>__exit__</code>，即使发生异常也会关闭资源。<br>
+        本质：<code>with</code> 进入时调用 <code>__enter__</code>，离开时（无论是否异常）调用 <code>__exit__</code>。
       </div>
+
       <div class="demo-card">
-        <div class="demo-header"><span>⏱</span><span>@contextmanager timer</span></div>
+        <div class="demo-header"><span>📋</span><span>with 语句工作原理</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code># with 语句等价展开
+with open('demo.txt', 'r') as f:
+    data = f.read()
+
+# 等价于：
+f = open('demo.txt', 'r')
+try:
+    f.__enter__()        # 返回文件对象本身
+    data = f.read()
+finally:
+    f.__exit__(None, None, None)  # 关闭文件
+
+# ✅ 即使 f.read() 抛出异常，文件也会被关闭</code></pre>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>两种实现方式对比</span></div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <p style="color:var(--gd);font-weight:600;font-size:13px;margin-bottom:8px">方式一：类（完整控制）</p>
+            <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>class ManagedFile:
+    def __init__(self, path, mode):
+        self.path = path
+        self.mode = mode
+
+    def __enter__(self):
+        print('打开文件')
+        self.f = open(self.path, self.mode)
+        return self.f       # as 变量
+
+    def __exit__(self, exc_type,
+                 exc_val, exc_tb):
+        self.f.close()
+        print('文件已关闭')
+        return False  # 不压制异常
+
+with ManagedFile('a.txt','w') as f:
+    f.write('hello')</code></pre>
+          </div>
+          <div style="flex:1;min-width:220px">
+            <p style="color:var(--gd);font-weight:600;font-size:13px;margin-bottom:8px">方式二：@contextmanager（简洁）</p>
+            <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>from contextlib import contextmanager
+import time
+
+@contextmanager
+def timer(name=''):
+    t0 = time.perf_counter()
+    print(f'[{name}] 开始')
+    try:
+        yield        # with 块在此执行
+    finally:
+        elapsed = time.perf_counter() - t0
+        print(f'[{name}] 耗时: {elapsed:.4f}s')
+
+with timer('计算'):
+    result = sum(range(1_000_000))
+    # [计算] 开始
+    # [计算] 耗时: 0.031s</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="key-point"><strong>🎯 __exit__ 的三个参数：</strong>
+        <code>exc_type</code>（异常类型）、<code>exc_val</code>（异常值）、<code>exc_tb</code>（traceback）。
+        无异常时三个都是 <code>None</code>。返回 <code>True</code> 表示压制异常（不再向上传播），返回 <code>False</code> 正常传播。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header"><span>⏱</span><span>@contextmanager timer 演示</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
           <button class="run-btn" onclick="runTimer(100000)">sum(range(100000))</button>
           <button class="run-btn" onclick="runTimer(1000000)" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">sum(range(1000000))</button>
+          <button class="run-btn" onclick="document.getElementById('timerLog').innerHTML=''" style="background:#95a5a6">清空</button>
         </div>
         <div class="log-box" id="timerLog">点击按钮运行…</div>
       </div>
@@ -90,43 +223,56 @@
   <footer class="site-footer"><div class="container"><p>西南科技大学蓝鲸Sass开发课程 &copy; 2025</p></div></footer>
   <script>
   let vFile=null,wCount=0;
-  function fileReset(){vFile=null;wCount=0;document.getElementById('fileContent').textContent='ï¼文件为空ï¼';document.getElementById('fileLog').innerHTML='';}
+  function fileReset(){
+    vFile=null;wCount=0;
+    document.getElementById('fileContent').textContent='ï¼文件为空ï¼';
+    document.getElementById('fileLog').innerHTML='';
+  }
   function fileOp(mode){
+    const NL='\n';
     const log=document.getElementById('fileLog'),vis=document.getElementById('fileContent');
-    if(mode==='w'){wCount++;vFile='第一行内容
-第二行内容
-第三行内容（写入#'+wCount+'）
-';
-      log.innerHTML+='<div style="animation:fadeIn .3s;color:#68d391">✅ open("demo.txt","w") 写入完成</div>';}
-    else if(mode==='a'){if(!vFile){log.innerHTML+='<div style="color:#fc8181">⚠ 先执行写入</div>';return;}
-      vFile+='追加第'+(++wCount)+'行
-';
-      log.innerHTML+='<div style="animation:fadeIn .3s;color:#63b3ed">✅ open("demo.txt","a") 追加完成</div>';}
-    else{if(!vFile){log.innerHTML+='<div style="color:#fc8181">❌ FileNotFoundError: demo.txt 不存在</div>';return;}
-      log.innerHTML+='<div style="animation:fadeIn .3s;color:#c6f0da">✅ open("demo.txt","r") 读取'+vFile.split('
-').filter(Boolean).length+'行</div>';}
+    if(mode==='w'){
+      wCount++;
+      vFile='第一行内容'+NL+'第二行内容'+NL+'第三行内容（写入#'+wCount+'）'+NL;
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#68d391">✅ open("demo.txt","w") 写入完成</div>';
+    } else if(mode==='a'){
+      if(!vFile){log.innerHTML+='<div style="color:#fc8181">⚠ 先执行写入</div>';return;}
+      vFile+='追加第'+(++wCount)+'行'+NL;
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#63b3ed">✅ open("demo.txt","a") 追加完成</div>';
+    } else {
+      if(!vFile){log.innerHTML+='<div style="color:#fc8181">❌ FileNotFoundError: demo.txt 不存在</div>';return;}
+      const lines=vFile.split(NL).filter(Boolean).length;
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#c6f0da">✅ open("demo.txt","r") 读取'+lines+'行</div>';
+    }
     vis.textContent=vFile||'ï¼文件为空ï¼';
   }
   let vJSON=null;
   function jsonOp(op){
     const log=document.getElementById('jsonLog');
-    if(op==='write'){vJSON={name:'Alice',age:20,courses:['Python','Math'],graduated:false};
-      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ json.dump(data, f, ensure_ascii=False, indent=2)</div><pre style="color:#c6f0da;margin-top:8px;">'+JSON.stringify(vJSON,null,2)+'</pre>';}
-    else if(op==='read'){if(!vJSON){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
-      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ json.load(f) 成功</div><div style="color:#c6f0da;margin-top:6px">类型: dict | 姓名: '+vJSON.name+' | 课程: '+vJSON.courses.join(', ')+'</div>';}
-    else{if(!vJSON){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
+    if(op==='write'){
+      vJSON={name:'Alice',age:20,courses:['Python','Math'],graduated:false};
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ json.dump(data, f, ensure_ascii=False, indent=2)</div><pre style="color:#c6f0da;margin-top:8px;">'+JSON.stringify(vJSON,null,2)+'</pre>';
+    } else if(op==='read'){
+      if(!vJSON){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ json.load(f) 成功</div><div style="color:#c6f0da;margin-top:6px">类型: dict | 姓名: '+vJSON.name+' | 课程: '+vJSON.courses.join(', ')+'</div>';
+    } else {
+      if(!vJSON){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
       vJSON.age++;vJSON.courses.push('Django');
-      log.innerHTML='<div style="animation:fadeIn .3s;color:#ffd700">✅ 修改: age+1, courses增加 Django</div><pre style="color:#c6f0da;margin-top:8px;">'+JSON.stringify(vJSON,null,2)+'</pre>';}
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#ffd700">✅ 修改: age+1, courses 增加 Django</div><pre style="color:#c6f0da;margin-top:8px;">'+JSON.stringify(vJSON,null,2)+'</pre>';
+    }
   }
   let vCSV=null;
   function csvOp(op){
+    const NL='\n';
     const log=document.getElementById('csvLog');
-    if(op==='write'){vCSV=[{name:'Alice',age:20,score:90},{name:'Bob',age:21,score:85},{name:'Charlie',age:19,score:78}];
+    if(op==='write'){
+      vCSV=[{name:'Alice',age:20,score:90},{name:'Bob',age:21,score:85},{name:'Charlie',age:19,score:78}];
       const rows=[['name','age','score'],...vCSV.map(r=>[r.name,r.age,r.score])];
-      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ csv.writer 写入 students.csv</div><pre style="color:#c6f0da;margin-top:8px;">'+rows.map(r=>r.join(',')).join('
-')+'</pre>';}
-    else{if(!vCSV){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
-      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ csv.DictReader 读取:</div>'+vCSV.map(r=>'<div style="color:#c6f0da">&nbsp;&nbsp;'+r.name+', 分数: '+r.score+'</div>').join('');}
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ csv.writer 写入 students.csv</div><pre style="color:#c6f0da;margin-top:8px;">'+rows.map(r=>r.join(',')).join(NL)+'</pre>';
+    } else {
+      if(!vCSV){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ csv.DictReader 读取:</div>'+vCSV.map(r=>'<div style="color:#c6f0da">&nbsp;&nbsp;'+r.name+', 分数: '+r.score+'</div>').join('');
+    }
   }
   function runTimer(n){
     const log=document.getElementById('timerLog');

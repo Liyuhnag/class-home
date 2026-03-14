@@ -372,6 +372,38 @@ s.introduce()</code></pre>
       </div>
 
       <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>BankAccount 封装代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self._balance = balance  # 私有属性（约定）
+
+    def deposit(self, amount):
+        """存款接口"""
+        if amount <= 0:
+            raise ValueError("存款金额必须大于 0")
+        self._balance += amount
+        return self._balance
+
+    def withdraw(self, amount):
+        """取款接口"""
+        if amount > self._balance:
+            raise ValueError("余额不足")
+        self._balance -= amount
+        return self._balance
+
+    @property
+    def balance(self):
+        """只读属性"""
+        return self._balance
+
+# 使用
+account = BankAccount("Alice", 1000)
+account.deposit(500)      # ✅ 通过接口
+account._balance = -999   # ⚠️ 可以直接改，但不应该</code></pre>
+      </div>
+
+      <div class="demo-card">
         <div class="demo-header"><span>🏦</span><span>BankAccount 封装演示</span></div>
         <div id="bankVis" style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem;"></div>
         <div style="display:flex;gap:1rem;flex-wrap:wrap;">
@@ -391,6 +423,32 @@ s.introduce()</code></pre>
         Employee（员工）是基类，有 name / salary / work()。<br>
         Manager（经理）继承 Employee，额外有 manage() 方法。<br>
         Engineer（工程师）继承 Employee，额外有 code() 方法。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>继承代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>class Employee:
+    def __init__(self, name, salary):
+        self.name = name
+        self.salary = salary
+
+    def work(self):
+        return f"{self.name} 在工作"
+
+class Manager(Employee):
+    def manage(self):
+        return f"{self.name} 在管理团队"
+
+class Engineer(Employee):
+    def code(self):
+        return f"{self.name} 在写代码"
+
+# 使用
+m = Manager("Bob", 15000)
+e = Engineer("Carol", 12000)
+print(m.work())      # ✅ 继承自 Employee
+print(m.manage())    # ✅ Manager 特有
+print(e.code())      # ✅ Engineer 特有</code></pre>
       </div>
 
       <div class="demo-card">
@@ -418,7 +476,27 @@ s.introduce()</code></pre>
       </div>
 
       <div class="demo-card">
-        <div class="demo-header"><span>🎭</span><span>多态演示</span></div>
+        <div class="demo-header"><span>📋</span><span>多态代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>class Animal:
+    def speak(self):
+        raise NotImplementedError
+
+class Dog(Animal):
+    def speak(self):
+        return "汪汪！"
+
+class Cat(Animal):
+    def speak(self):
+        return "喵喵～"
+
+class Bird(Animal):
+    def speak(self):
+        return "叽叽喳喳"
+
+# 多态：同一接口，不同行为
+animals = [Dog(), Cat(), Bird()]
+for animal in animals:
+    print(animal.speak())  # 自动调用各自的 speak()
         <div id="polyVis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin-bottom:1rem;"></div>
         <button class="run-btn" id="polyRunBtn" onclick="runPoly()">▶ 让所有动物说话</button>
         <div id="polyLog" class="log-box"></div>
@@ -431,6 +509,35 @@ s.introduce()</code></pre>
         <strong>💡 类比：重载运算符</strong>
         学过 C++ 的同学知道「运算符重载」。Python 的魔术方法是同样的思想：<br>
         定义 <code>__add__</code> 就支持 <code>+</code>，定义 <code>__str__</code> 就支持 <code>print()</code>。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>Vector 魔术方法代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>import math
+
+class Vector:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __add__(self, other):    # v1 + v2
+        return Vector(self.x + other.x, self.y + other.y)
+
+    def __eq__(self, other):     # v1 == v2
+        return self.x == other.x and self.y == other.y
+
+    def __abs__(self):           # abs(v)
+        return math.sqrt(self.x**2 + self.y**2)
+
+    def __str__(self):           # print(v)
+        return f"Vector({self.x}, {self.y})"
+
+v1 = Vector(1, 2)
+v2 = Vector(3, 4)
+print(v1 + v2)    # Vector(4, 6)
+print(v1 == v2)   # False
+print(abs(v2))    # 5.0
+print(v1)         # Vector(1, 2)</code></pre>
       </div>
 
       <div class="demo-card">
@@ -458,6 +565,33 @@ s.introduce()</code></pre>
           <tr><td>静态方法</td><td><code>@staticmethod</code></td><td>无</td><td>都不能直接访问</td><td>纯工具函数，逻辑上属于类</td></tr>
         </tbody>
       </table>
+
+      <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>三种方法代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>class Student:
+    school = "西南科技大学"   # 类属性
+
+    def __init__(self, name, score):
+        self.name = name           # 实例属性
+        self.score = score
+
+    def greet(self):               # 实例方法
+        return f"我是{self.name}，来自{self.school}"
+
+    @classmethod
+    def from_string(cls, s):       # 类方法（工厂）
+        name, score = s.split(',')
+        return cls(name, int(score))
+
+    @staticmethod
+    def is_passed(score):          # 静态方法
+        return score >= 60
+
+# 使用
+s1 = Student("Alice", 90)
+s2 = Student.from_string("Bob,75")  # 工厂方法
+print(Student.is_passed(55))        # False</code></pre>
+      </div>
 
       <div class="demo-card">
         <div class="demo-header"><span>🔬</span><span>三种方法对比演示</span></div>

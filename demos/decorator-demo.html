@@ -54,7 +54,9 @@
     </div>
     <article class="panel">
       <h1>Python 装饰器 &mdash; 交互演示</h1>
-      <blockquote class="tip-block">装饰器 = 接收函数作为参数、返回新函数的高阶函数。Django 大量使用：<code>@login_required</code>、<code>@api_view</code>、<code>@cache_page</code>。</blockquote>
+      <blockquote class="tip-block">装饰器 = 接收函数作为参数、返回新函数的高阶函数。Django 大量使用：<code>@login_required</code>、<code>@api_view</code>、<code>@cache_page</code>。<br>
+      💡 <strong>前置知识：</strong>装饰器由闭包实现，建议先看
+      <a href="functions-demo.html#closure-to-decorator" style="color:var(--gm);font-weight:600">函数演示页第 7 节「闭包 → 装饰器」</a>。</blockquote>
 
       <h2>1. 执行原理步进器</h2>
       <div class="analogy-box"><strong>💡 类比：快递包装</strong>
@@ -79,6 +81,29 @@
       <div class="analogy-box"><strong>💡 三层嵌套</strong>
         普通装饰器两层：<code>decorator → wrapper</code>。<br>
         带参数装饰器三层：<code>outer(参数) → decorator(func) → wrapper(*args)</code>。
+      </div>
+      <div class="demo-card">
+        <div class="demo-header"><span>📋</span><span>带参数装饰器代码</span></div>
+        <pre class="code-block" style="font-size:12px;margin-bottom:0"><code>from functools import wraps
+
+def retry(max_retries=3, exceptions=(Exception,)):
+    """带参数装饰器：失败时自动重试"""
+    def decorator(func):          # 第二层：接收函数
+        @wraps(func)
+        def wrapper(*args, **kwargs):  # 第三层：执行逻辑
+            for attempt in range(1, max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    print(f"第 {attempt} 次失败: {e}")
+                    if attempt == max_retries:
+                        raise
+            return wrapper
+        return decorator          # 返回真正的装饰器
+
+@retry(max_retries=3, exceptions=(ConnectionError,))
+def fetch_data(url):
+    ...  # 模拟不稳定的网络请求</code></pre>
       </div>
       <div class="demo-card">
         <div class="demo-header"><span>🔁</span><span>@retry(n) 重试装饰器演示</span></div>
