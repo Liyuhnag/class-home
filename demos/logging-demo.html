@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Python 日志系统 - 交互演示</title>
+  <link rel="stylesheet" href="../assets/css/main.css"/>
+  <style>
+    :root{--gd:#245f4c;--gm:#3d9970;--gb:#4ea980;--gl:#e6f6ed;--gbr:#d0eedc;--gc:#f5fcf8;}
+    .demo-card{background:var(--gc);border:1px solid var(--gbr);border-radius:10px;padding:24px;margin:14px 0 20px;}
+    .demo-header{font-size:1rem;font-weight:600;color:var(--gd);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .run-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;background:linear-gradient(135deg,var(--gb),var(--gm));color:#fff;margin:3px;}
+    .run-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(78,169,128,.35);}
+    .log-box{background:#1e2d27;color:#c6f0da;border-radius:8px;padding:14px;font-family:monospace;font-size:13px;min-height:80px;margin-top:12px;line-height:1.7;}
+    .level-badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;margin-right:6px;}
+    .lvl-debug{background:#2d3748;color:#90cdf4;}
+    .lvl-info{background:#1a4731;color:#68d391;}
+    .lvl-warning{background:#744210;color:#f6e05e;}
+    .lvl-error{background:#742a2a;color:#fc8181;}
+    .lvl-critical{background:#1a1a2e;color:#e879f9;}
+    .analogy-box{background:#fffbea;border-left:4px solid #f6ad3c;padding:14px 18px;margin:14px 0;border-radius:8px;color:#4a3800;font-size:15px;}
+    .analogy-box strong{display:block;margin-bottom:5px;color:#92560a;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+      <nav class="nav-links"><a href="../index.html">首页</a><a href="../courses/course-02.html">第二节课</a></nav>
+    </div>
+  </header>
+  <main class="container course-layout">
+    <div class="breadcrumb"><a href="../index.html">首页</a> / <a href="../courses/course-02.html">第二节课</a> / Python 日志系统</div>
+    <article class="panel">
+      <h1>Python 日志系统 &mdash; 交互演示</h1>
+      <blockquote class="tip-block">生产代码不应使用 <code>print()</code> 调试，而应使用 <code>logging</code> 模块——它提供级别控制、格式化和多输出目标。</blockquote>
+
+      <h2>1. print vs logging</h2>
+      <table class="compare-table">
+        <thead><tr><th>对比</th><th><code>print()</code></th><th><code>logging</code></th></tr></thead>
+        <tbody>
+          <tr><td>级别控制</td><td>❌</td><td>✅ DEBUG/INFO/WARNING/ERROR/CRITICAL</td></tr>
+          <tr><td>输出目标</td><td>控制台</td><td>控制台 + 文件 + 网络…</td></tr>
+          <tr><td>格式化</td><td>手动</td><td>自动（时间、文件、行号）</td></tr>
+          <tr><td>Django 集成</td><td>❌</td><td>✅ settings.LOGGING</td></tr>
+        </tbody>
+      </table>
+
+      <h2>2. 日志级别演示</h2>
+      <table class="compare-table">
+        <thead><tr><th>级别</th><th>数值</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td><span class="level-badge lvl-debug">DEBUG</span></td><td>10</td><td>开发调试，最详细</td></tr>
+          <tr><td><span class="level-badge lvl-info">INFO</span></td><td>20</td><td>正常运行信息</td></tr>
+          <tr><td><span class="level-badge lvl-warning">WARNING</span></td><td>30</td><td>警告（默认级别）</td></tr>
+          <tr><td><span class="level-badge lvl-error">ERROR</span></td><td>40</td><td>错误，需要处理</td></tr>
+          <tr><td><span class="level-badge lvl-critical">CRITICAL</span></td><td>50</td><td>严重错误，系统可能崩溃</td></tr>
+        </tbody>
+      </table>
+      <div class="demo-card">
+        <div class="demo-header"><span>🎚</span><span>日志级别过滤演示</span></div>
+        <p style="color:var(--gd);margin-bottom:10px">设置不同级别，观察哪些日志被过滤掉</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="runLevel('DEBUG')">DEBUG（全部显示）</button>
+          <button class="run-btn" onclick="runLevel('INFO')" style="background:linear-gradient(135deg,#2980b9,#1a5276)">INFO（过滤 DEBUG）</button>
+          <button class="run-btn" onclick="runLevel('WARNING')" style="background:linear-gradient(135deg,#e67e22,#d35400)">WARNING（默认）</button>
+          <button class="run-btn" onclick="runLevel('ERROR')" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">ERROR+</button>
+        </div>
+        <div class="log-box" id="levelLog">点击按钮设置日志级别…</div>
+      </div>
+
+      <h2>3. 业务代码中的日志</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>🏪</span><span>订单处理日志演示</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="runOrder(1001,500)">正常订单 500</button>
+          <button class="run-btn" onclick="runOrder(1002,50000)" style="background:linear-gradient(135deg,#e67e22,#d35400)">大额订单 50000</button>
+          <button class="run-btn" onclick="runOrder(1003,-10)" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">非法金额 -10</button>
+          <button class="run-btn" onclick="document.getElementById('orderLog').innerHTML=''" style="background:#95a5a6">清空</button>
+        </div>
+        <div class="log-box" id="orderLog">点击按钮处理订单…</div>
+      </div>
+
+      <h2>4. logger.exception() vs logger.error()</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>🔍</span><span>exception() vs error() 对比</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="runExcVsErr('error')">logger.error()</button>
+          <button class="run-btn" onclick="runExcVsErr('exception')" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">logger.exception()</button>
+        </div>
+        <div class="log-box" id="excLog">点击对比两种方式的输出差异…</div>
+      </div>
+    </article>
+  </main>
+  <footer class="site-footer"><div class="container"><p>西南科技大学蓝鲸Sass开发课程 &copy; 2025</p></div></footer>
+  <script>
+  const LEVELS = {DEBUG:10,INFO:20,WARNING:30,ERROR:40,CRITICAL:50};
+  const MSGS = [
+    {level:'DEBUG', text:'调试信息: x = 42, y = hello'},
+    {level:'INFO',  text:'用户 Alice 登录成功'},
+    {level:'WARNING', text:'磁盘使用率 80%'},
+    {level:'ERROR', text:'数据库连接失败: Connection refused'},
+    {level:'CRITICAL', text:'内存溢出，系统即将崩溃'},
+  ];
+  const BADGE = {DEBUG:'lvl-debug',INFO:'lvl-info',WARNING:'lvl-warning',ERROR:'lvl-error',CRITICAL:'lvl-critical'};
+  function ts(){const n=new Date();return n.toTimeString().slice(0,8);}
+  function badge(l){return '<span class="level-badge '+BADGE[l]+'">'+l+'</span>';}
+  function runLevel(minLevel){
+    const log=document.getElementById('levelLog');
+    const minVal=LEVELS[minLevel];
+    log.innerHTML='<div style="color:#a0aec0;margin-bottom:8px">logging.basicConfig(level=logging.'+minLevel+')</div>';
+    MSGS.forEach((m,i)=>{
+      setTimeout(()=>{
+        if(LEVELS[m.level]>=minVal){
+          log.innerHTML+='<div style="animation:fadeIn .3s">'+ts()+' '+badge(m.level)+' myapp: '+m.text+'</div>';
+        } else {
+          log.innerHTML+='<div style="color:#4a5568;text-decoration:line-through">'+ts()+' '+badge(m.level)+' [过滤] '+m.text+'</div>';
+        }
+      },i*200);
+    });
+  }
+  function runOrder(id,amount){
+    const log=document.getElementById('orderLog');
+    log.innerHTML+='<div style="animation:fadeIn .3s;color:#68d391">'+ts()+' '+badge('INFO')+' myapp.orders: 处理订单 #'+id+', 金额: '+amount+'</div>';
+    if(amount<=0){
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#fc8181">'+ts()+' '+badge('ERROR')+' myapp.orders: 订单 #'+id+' 金额无效: '+amount+'</div>';
+      log.innerHTML+='<div style="color:#fc8181;padding-left:20px">Traceback: ValueError: 金额必须大于 0</div>';
+      return;
+    }
+    if(amount>10000){
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#f6e05e">'+ts()+' '+badge('WARNING')+' myapp.orders: 订单 #'+id+' 大额交易: '+amount+'</div>';
+    }
+    log.innerHTML+='<div style="animation:fadeIn .3s;color:#68d391">'+ts()+' '+badge('INFO')+' myapp.orders: 订单 #'+id+' 处理完成</div>';
+  }
+  function runExcVsErr(mode){
+    const log=document.getElementById('excLog');
+    if(mode==='error'){
+      log.innerHTML='<div style="color:#a0aec0;margin-bottom:8px">--- logger.error() ---</div>';
+      log.innerHTML+='<div style="color:#fc8181">'+ts()+' '+badge('ERROR')+' 数据库连接失败</div>';
+      log.innerHTML+='<div style="color:#a0aec0;font-size:12px;margin-top:6px">⚠️ 只输出消息，没有 traceback</div>';
+    } else {
+      log.innerHTML='<div style="color:#a0aec0;margin-bottom:8px">--- logger.exception() ---</div>';
+      log.innerHTML+='<div style="color:#fc8181">'+ts()+' '+badge('ERROR')+' 数据库连接失败</div>';
+      log.innerHTML+='<div style="color:#fc8181;font-size:12px;margin-top:4px">Traceback (most recent call last):</div>';
+      log.innerHTML+='<div style="color:#fc8181;font-size:12px;padding-left:16px">File 'app.py', line 42, in connect_db</div>';
+      log.innerHTML+='<div style="color:#fc8181;font-size:12px;padding-left:32px">conn = psycopg2.connect(DSN)</div>';
+      log.innerHTML+='<div style="color:#fc8181;font-size:12px">OperationalError: could not connect to server</div>';
+      log.innerHTML+='<div style="color:#68d391;font-size:12px;margin-top:6px">✅ 自动附加当前异常的完整 traceback，适合在 except 块中使用</div>';
+    }
+  }
+</script>
+</body></html>

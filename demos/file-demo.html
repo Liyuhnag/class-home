@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Python 文件操作 - 交互演示</title>
+  <link rel="stylesheet" href="../assets/css/main.css"/>
+  <style>
+    :root{--gd:#245f4c;--gm:#3d9970;--gb:#4ea980;--gl:#e6f6ed;--gbr:#d0eedc;--gc:#f5fcf8;}
+    .demo-card{background:var(--gc);border:1px solid var(--gbr);border-radius:10px;padding:24px;margin:14px 0 20px;}
+    .demo-header{font-size:1rem;font-weight:600;color:var(--gd);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .run-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;background:linear-gradient(135deg,var(--gb),var(--gm));color:#fff;margin:3px;}
+    .run-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(78,169,128,.35);}
+    .analogy-box{background:#fffbea;border-left:4px solid #f6ad3c;padding:14px 18px;margin:14px 0;border-radius:8px;color:#4a3800;font-size:15px;}
+    .analogy-box strong{display:block;margin-bottom:5px;color:#92560a;}
+    .log-box{background:#1e2d27;color:#c6f0da;border-radius:8px;padding:14px;font-family:monospace;font-size:13px;min-height:60px;margin-top:12px;line-height:1.6;}
+    .file-vis{background:#fff;border:1.5px solid var(--gbr);border-radius:8px;padding:16px;font-family:monospace;font-size:13px;min-height:80px;color:#333;white-space:pre-wrap;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+      <nav class="nav-links"><a href="../index.html">首页</a><a href="../courses/course-02.html">第二节课</a></nav>
+    </div>
+  </header>
+  <main class="container course-layout">
+    <div class="breadcrumb"><a href="../index.html">首页</a> / <a href="../courses/course-02.html">第二节课</a> / Python 文件操作</div>
+    <article class="panel">
+      <h1>Python 文件操作 &mdash; 交互演示</h1>
+      <blockquote class="tip-block">始终用 <code>with open(...)</code>，它保证文件自动关闭，即使发生异常。</blockquote>
+      <h2>1. 文件打开模式</h2>
+      <table class="compare-table">
+        <thead><tr><th>模式</th><th>说明</th><th>文件不存在时</th></tr></thead>
+        <tbody>
+          <tr><td><code>'r'</code></td><td>只读</td><td>报错</td></tr>
+          <tr><td><code>'w'</code></td><td>只写（清空）</td><td>创建</td></tr>
+          <tr><td><code>'a'</code></td><td>追加</td><td>创建</td></tr>
+          <tr><td><code>'x'</code></td><td>创建写（已存在报错）</td><td>创建</td></tr>
+          <tr><td><code>'rb'/'wb'</code></td><td>二进制读/写</td><td>同上</td></tr>
+        </tbody>
+      </table>
+      <div class="demo-card">
+        <div class="demo-header"><span>📄</span><span>虚拟文件操作演示</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="fileOp('w')">写入 'w'</button>
+          <button class="run-btn" onclick="fileOp('a')" style="background:linear-gradient(135deg,#2980b9,#1a5276)">追加 'a'</button>
+          <button class="run-btn" onclick="fileOp('r')" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">读取 'r'</button>
+          <button class="run-btn" onclick="fileReset()" style="background:#95a5a6">重置</button>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;"><p style="color:var(--gd);font-weight:600;font-size:13px;margin-bottom:6px">📁 demo.txt</p><div class="file-vis" id="fileContent">（文件为空）</div></div>
+          <div style="flex:1;min-width:200px;"><p style="color:var(--gd);font-weight:600;font-size:13px;margin-bottom:6px">🖥 操作日志</p><div class="log-box" id="fileLog">等待操作…</div></div>
+        </div>
+      </div>
+      <h2>2. JSON 文件处理</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>🗂</span><span>JSON 读写演示</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="jsonOp('write')">json.dump()</button>
+          <button class="run-btn" onclick="jsonOp('read')" style="background:linear-gradient(135deg,#2980b9,#1a5276)">json.load()</button>
+          <button class="run-btn" onclick="jsonOp('modify')" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">修改后写回</button>
+        </div>
+        <div class="log-box" id="jsonLog">点击按钮操作 student.json…</div>
+      </div>
+      <h2>3. CSV 处理</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>📊</span><span>CSV 读写演示</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="csvOp('write')">csv.writer 写入</button>
+          <button class="run-btn" onclick="csvOp('read')" style="background:linear-gradient(135deg,#2980b9,#1a5276)">csv.DictReader 读取</button>
+        </div>
+        <div class="log-box" id="csvLog">点击按钮操作 students.csv…</div>
+      </div>
+      <h2>4. 上下文管理器</h2>
+      <div class="analogy-box"><strong>💡 C 的 fopen/fclose vs Python with</strong>
+        C 需要手动 fclose，Python with 自动调用 __exit__，即使异常也关闭。
+      </div>
+      <div class="demo-card">
+        <div class="demo-header"><span>⏱</span><span>@contextmanager timer</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="runTimer(100000)">sum(range(100000))</button>
+          <button class="run-btn" onclick="runTimer(1000000)" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">sum(range(1000000))</button>
+        </div>
+        <div class="log-box" id="timerLog">点击按钮运行…</div>
+      </div>
+    </article>
+  </main>
+  <footer class="site-footer"><div class="container"><p>西南科技大学蓝鲸Sass开发课程 &copy; 2025</p></div></footer>
+  <script>
+  let vFile=null,wCount=0;
+  function fileReset(){vFile=null;wCount=0;document.getElementById('fileContent').textContent='ï¼文件为空ï¼';document.getElementById('fileLog').innerHTML='';}
+  function fileOp(mode){
+    const log=document.getElementById('fileLog'),vis=document.getElementById('fileContent');
+    if(mode==='w'){wCount++;vFile='第一行内容
+第二行内容
+第三行内容（写入#'+wCount+'）
+';
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#68d391">✅ open("demo.txt","w") 写入完成</div>';}
+    else if(mode==='a'){if(!vFile){log.innerHTML+='<div style="color:#fc8181">⚠ 先执行写入</div>';return;}
+      vFile+='追加第'+(++wCount)+'行
+';
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#63b3ed">✅ open("demo.txt","a") 追加完成</div>';}
+    else{if(!vFile){log.innerHTML+='<div style="color:#fc8181">❌ FileNotFoundError: demo.txt 不存在</div>';return;}
+      log.innerHTML+='<div style="animation:fadeIn .3s;color:#c6f0da">✅ open("demo.txt","r") 读取'+vFile.split('
+').filter(Boolean).length+'行</div>';}
+    vis.textContent=vFile||'ï¼文件为空ï¼';
+  }
+  let vJSON=null;
+  function jsonOp(op){
+    const log=document.getElementById('jsonLog');
+    if(op==='write'){vJSON={name:'Alice',age:20,courses:['Python','Math'],graduated:false};
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ json.dump(data, f, ensure_ascii=False, indent=2)</div><pre style="color:#c6f0da;margin-top:8px;">'+JSON.stringify(vJSON,null,2)+'</pre>';}
+    else if(op==='read'){if(!vJSON){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ json.load(f) 成功</div><div style="color:#c6f0da;margin-top:6px">类型: dict | 姓名: '+vJSON.name+' | 课程: '+vJSON.courses.join(', ')+'</div>';}
+    else{if(!vJSON){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
+      vJSON.age++;vJSON.courses.push('Django');
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#ffd700">✅ 修改: age+1, courses增加 Django</div><pre style="color:#c6f0da;margin-top:8px;">'+JSON.stringify(vJSON,null,2)+'</pre>';}
+  }
+  let vCSV=null;
+  function csvOp(op){
+    const log=document.getElementById('csvLog');
+    if(op==='write'){vCSV=[{name:'Alice',age:20,score:90},{name:'Bob',age:21,score:85},{name:'Charlie',age:19,score:78}];
+      const rows=[['name','age','score'],...vCSV.map(r=>[r.name,r.age,r.score])];
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ csv.writer 写入 students.csv</div><pre style="color:#c6f0da;margin-top:8px;">'+rows.map(r=>r.join(',')).join('
+')+'</pre>';}
+    else{if(!vCSV){log.innerHTML='<div style="color:#fc8181">❌ 先执行写入</div>';return;}
+      log.innerHTML='<div style="animation:fadeIn .3s;color:#68d391">✅ csv.DictReader 读取:</div>'+vCSV.map(r=>'<div style="color:#c6f0da">&nbsp;&nbsp;'+r.name+', 分数: '+r.score+'</div>').join('');}
+  }
+  function runTimer(n){
+    const log=document.getElementById('timerLog');
+    const t0=performance.now();
+    let s=0;for(let i=0;i<n;i++)s+=i;
+    const ms=(performance.now()-t0).toFixed(2);
+    log.innerHTML+='<div style="animation:fadeIn .3s;color:#68d391">✅ [timer] 开始 | sum(range('+n.toLocaleString()+')) = '+s+' | 耗时: '+ms+'ms</div>';
+  }
+</script>
+</body></html>

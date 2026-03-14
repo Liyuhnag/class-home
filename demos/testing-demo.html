@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>单元测试与 pytest 演示 | 西南科技大学蓝鲸Sass开发课程</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <style>
+    /* ===== 通用交互组件 ===== */
+    .demo-card {
+      background: #f5fcf8;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin: 12px 0 20px;
+    }
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .demo-header h4 {
+      margin: 0 !important;
+      padding-left: 0 !important;
+      font-size: 16px;
+      font-weight: 600;
+      color: #245f4c;
+    }
+    .demo-header h4::before { display: none !important; }
+    .demo-controls { display: flex; gap: 8px; align-items: center; }
+    .run-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-family: inherit;
+    }
+    .run-btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+    .run-btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,130,246,0.35); }
+    .run-btn-green { background: linear-gradient(135deg, #4ea980, #3d9970); color: #fff; }
+    .run-btn-green:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(78,169,128,0.35); }
+    .run-btn-orange { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+    .run-btn-orange:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,158,11,0.35); }
+    .run-btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+    .run-btn-red:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,0.35); }
+    .run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    .analogy-box {
+      margin: 16px 0; padding: 20px 24px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1px solid #fde68a; border-radius: var(--radius-md);
+      font-size: 14px; line-height: 1.85; color: #78350f;
+    }
+    .analogy-box .analogy-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .key-point {
+      margin: 12px 0; padding: 14px 18px;
+      background: #eef9f3; border-left: 4px solid #4ea980;
+      border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.8; color: #245f4c;
+    }
+    .key-point strong { color: #1f6b4f; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: #23916b; font-size: 14px; margin-bottom: 14px; }
+    .back-link:hover { color: #1f6b4f; }
+    .step-narr {
+      margin-top: 12px; padding: 12px 16px;
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      font-size: 14px; line-height: 1.7; min-height: 44px;
+    }
+    .step-counter { text-align: center; font-size: 12px; color: var(--text-sub); margin-top: 8px; }
+
+    /* ===== 终端模拟 ===== */
+    .terminal {
+      margin: 12px 0; padding: 16px 20px;
+      background: #1a2332; border-radius: 10px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px; line-height: 1.7; color: #a0d8b8;
+      overflow-x: auto; min-height: 60px; max-height: 360px; overflow-y: auto;
+    }
+    .terminal .t-prompt { color: #6b8f7b; }
+    .terminal .t-cmd { color: #93c5fd; font-weight: 600; }
+    .terminal .t-pass { color: #34d399; }
+    .terminal .t-fail { color: #f87171; }
+    .terminal .t-warn { color: #fbbf24; }
+    .terminal .t-info { color: #e2e8f0; }
+    .terminal .t-dim { color: #64748b; }
+    .terminal .t-line {
+      opacity: 0; transform: translateY(4px);
+      animation: termAppear 0.2s ease forwards;
+    }
+    @keyframes termAppear { to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== 1. 为什么要测试 — Bug 场景 ===== */
+    .bug-scene {
+      margin: 16px 0; background: #fff;
+      border: 1px solid #d9efdf; border-radius: var(--radius-md); padding: 20px;
+    }
+    .bug-code-split {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin: 12px 0;
+    }
+    @media (max-width: 768px) { .bug-code-split { grid-template-columns: 1fr; } }
+    .bug-code-panel {
+      border-radius: 10px; border: 2px solid #e2e8f0;
+      overflow: hidden; transition: border-color 0.3s;
+    }
+    .bug-code-panel.has-bug { border-color: #fca5a5; }
+    .bug-code-panel.safe { border-color: #86efac; }
+    .bug-code-title {
+      padding: 8px 14px; font-size: 13px; font-weight: 700;
+      background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+    }
+    .bug-code-panel.has-bug .bug-code-title { background: #fef2f2; color: #991b1b; }
+    .bug-code-panel.safe .bug-code-title { background: #f0fdf4; color: #166534; }
+    .bug-code-body {
+      padding: 12px 16px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px; line-height: 1.7; background: #fafafa;
+      min-height: 80px;
+    }
+    .bug-code-body .hl-change { background: #fef3c7; padding: 1px 4px; border-radius: 3px; }
+    .bug-code-body .hl-bug { background: #fee2e2; padding: 1px 4px; border-radius: 3px; color: #dc2626; font-weight: 700; }
+    .bug-code-body .hl-good { background: #dcfce7; padding: 1px 4px; border-radius: 3px; color: #16a34a; font-weight: 700; }
+    .bug-result {
+      margin-top: 12px; padding: 12px 16px;
+      border-radius: 8px; font-size: 13px; font-weight: 600;
+      text-align: center; transition: all 0.3s;
+    }
+    .bug-result.pass { background: #d1fae5; color: #065f46; border: 1px solid #86efac; }
+    .bug-result.fail { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .bug-result.neutral { background: #f3f4f6; color: #6b7280; border: 1px solid #e2e8f0; }
+
+    /* ===== 2. 测试金字塔 ===== */
+    .pyramid-container {
+      display: flex; justify-content: center; margin: 24px 0;
+    }
+    .pyramid {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; max-width: 500px;
+    }
+    .pyramid-level {
+      display: flex; align-items: center; justify-content: center;
+      padding: 14px 20px; border-radius: 8px;
+      font-weight: 600; font-size: 14px; cursor: pointer;
+      transition: all 0.2s; text-align: center;
+      border: 2px solid transparent;
+    }
+    .pyramid-level:hover { transform: translateY(-2px); }
+    .pyramid-level.active { box-shadow: 0 0 0 3px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .pyramid-level.l-e2e {
+      width: 40%; background: #fee2e2; color: #991b1b;
+    }
+    .pyramid-level.l-integration {
+      width: 65%; background: #fef3c7; color: #92400e;
+    }
+    .pyramid-level.l-unit {
+      width: 90%; background: #d1fae5; color: #065f46;
+    }
+    .pyramid-detail {
+      margin-top: 16px; padding: 16px;
+      background: #fff; border: 1px solid #d9efdf; border-radius: 10px;
+      display: none; min-height: 80px;
+    }
+    .pyramid-detail.visible { display: block; }
+    .pyramid-detail .pd-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+    .pyramid-detail .pd-body { font-size: 13px; line-height: 1.7; color: var(--text-sub); }
+
+    /* ===== 3. pytest 交互演示 ===== */
+    .pytest-editor {
+      margin: 16px 0; background: #fff;
+      border: 1px solid #d9efdf; border-radius: var(--radius-md); padding: 20px;
+    }
+    .pytest-code {
+      padding: 16px 20px; background: #1e293b; border-radius: 10px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px; line-height: 1.7; color: #e2e8f0;
+      overflow-x: auto; margin-bottom: 12px;
+    }
+    .pytest-code .kw { color: #c084fc; font-weight: 600; }
+    .pytest-code .fn { color: #67e8f9; }
+    .pytest-code .str { color: #86efac; }
+    .pytest-code .cm { color: #64748b; font-style: italic; }
+    .pytest-code .num { color: #fbbf24; }
+    .pytest-code .op { color: #f472b6; }
+    .pytest-code .dec { color: #fb923c; }
+    .pytest-code .assert-kw { color: #f87171; font-weight: 700; }
+
+    /* ===== 4. 断言卡片 ===== */
+    .assert-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px; margin: 16px 0;
+    }
+    .assert-card {
+      background: #fff; border: 2px solid #e2e8f0; border-radius: 10px;
+      padding: 14px; cursor: pointer; transition: all 0.2s;
+    }
+    .assert-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .assert-card.active { border-color: #3b82f6; background: #eff6ff; }
+    .assert-card .ac-code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px; font-weight: 700; color: #245f4c;
+    }
+    .assert-card .ac-desc {
+      font-size: 12px; color: var(--text-sub); margin-top: 4px;
+    }
+    .assert-detail {
+      margin-top: 12px; padding: 16px;
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+      display: none; min-height: 60px;
+    }
+    .assert-detail.visible { display: block; }
+    .assert-example {
+      padding: 10px 14px; background: #1e293b; border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace; font-size: 12px;
+      color: #a0d8b8; line-height: 1.6; margin-top: 8px;
+    }
+
+    /* ===== 5. Fixture 流程 ===== */
+    .fixture-flow {
+      margin: 16px 0; background: #fff;
+      border: 1px solid #d9efdf; border-radius: var(--radius-md); padding: 20px;
+    }
+    .fixture-steps {
+      display: flex; flex-direction: column; gap: 8px; margin: 12px 0;
+    }
+    .fixture-step {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 8px;
+      border: 2px solid #e2e8f0; background: #f8fafc;
+      transition: all 0.3s; font-size: 13px;
+    }
+    .fixture-step .fs-icon { font-size: 22px; flex-shrink: 0; }
+    .fixture-step .fs-label { font-weight: 700; min-width: 80px; color: #245f4c; }
+    .fixture-step .fs-desc { color: var(--text-sub); flex: 1; }
+    .fixture-step .fs-code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px; background: #e2e8f0; padding: 2px 8px;
+      border-radius: 4px; flex-shrink: 0;
+    }
+    .fixture-step.active-setup { border-color: #60a5fa; background: #eff6ff; }
+    .fixture-step.active-test { border-color: #34d399; background: #f0fdf4; }
+    .fixture-step.active-teardown { border-color: #f59e0b; background: #fffbeb; }
+    .fixture-step.done { border-color: #86efac; background: #f0fdf4; opacity: 0.7; }
+
+    /* ===== 概念卡 ===== */
+    .concept-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px; margin: 16px 0;
+    }
+    .concept-card {
+      background: #fff; border: 1px solid #d9efdf; border-radius: 10px;
+      padding: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .concept-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(125,201,168,0.15); }
+    .concept-card .concept-icon { font-size: 28px; margin-bottom: 8px; }
+    .concept-card .concept-name { font-weight: 600; color: #245f4c; font-size: 15px; margin-bottom: 6px; }
+    .concept-card .concept-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+    .concept-card .concept-analogy {
+      font-size: 12px; color: #4ea980; margin-top: 6px;
+      padding-top: 6px; border-top: 1px dashed #d9efdf; line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+      <nav class="nav-links">
+        <a href="../index.html">首页</a>
+        <a href="../courses/course-02.html" data-nav>第二节课</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container course-layout">
+    <a href="../courses/course-02.html" class="back-link">← 返回第二节课</a>
+
+    <article class="panel">
+      <h1>单元测试与 pytest</h1>
+      <p>写完代码怎么知道它是对的？用眼睛看？手动运行一遍？这些方法在项目变大后就不够了。<strong>自动化测试</strong>是专业开发的必备技能。</p>
+
+      <!-- ==================== 1. 为什么要测试 ==================== -->
+      <h2>为什么要写测试？</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🏗️ 类比：盖房子的质检</div>
+        盖房子时，每砌一层砖都要检查是否水平。如果等整栋楼盖完才发现第 3 层歪了，<strong>拆掉重来的代价巨大</strong>。<br>
+        写测试就是写代码时<strong>随时质检</strong>：每写一个功能，立刻验证它是否正确。改代码后一键运行所有测试，几秒内知道有没有搞坏别的功能。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🐛 没有测试会怎样？</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="bugStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="bugAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="bugResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="bug-scene">
+          <div class="bug-code-split">
+            <div class="bug-code-panel" id="bugCodePanel">
+              <div class="bug-code-title" id="bugCodeTitle">📝 业务代码：calculate_price()</div>
+              <div class="bug-code-body" id="bugCodeBody">
+                <span class="cm"># 计算商品总价</span><br>
+                <span class="kw">def</span> calculate_price(price, quantity):<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> price * quantity
+              </div>
+            </div>
+            <div class="bug-code-panel" id="bugTestPanel">
+              <div class="bug-code-title" id="bugTestTitle">🧪 测试代码</div>
+              <div class="bug-code-body" id="bugTestBody">
+                <span style="color:#9ca3af">（还没写测试...）</span>
+              </div>
+            </div>
+          </div>
+          <div class="bug-result neutral" id="bugResult">等待开始演示...</div>
+        </div>
+
+        <div class="step-narr" id="bugNarr">👆 点击「下一步」，看一个真实的 bug 是如何产生的，以及测试如何拯救你。</div>
+        <div class="step-counter" id="bugCounter">第 0 / 7 步</div>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="concept-icon">🛡️</div>
+          <div class="concept-name">防止回归</div>
+          <div class="concept-desc">修改代码后自动验证旧功能是否正常。改了一行代码不会搞坏十个功能。</div>
+          <div class="concept-analogy">🏗️ 每层砖都检查水平</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">📖</div>
+          <div class="concept-name">活文档</div>
+          <div class="concept-desc">测试代码说明了「这个函数应该怎么用、期望什么结果」，比注释更可靠。</div>
+          <div class="concept-analogy">📝 用例就是使用说明书</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">💪</div>
+          <div class="concept-name">重构信心</div>
+          <div class="concept-desc">有测试覆盖的代码，你敢大胆重构。没测试的代码，改一行都心慌。</div>
+          <div class="concept-analogy">🪢 安全绳：摔不死</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">🚀</div>
+          <div class="concept-name">加速开发</div>
+          <div class="concept-desc">看似多写了代码，但省下了大量手动测试和排 bug 的时间。</div>
+          <div class="concept-analogy">🔧 磨刀不误砍柴工</div>
+        </div>
+      </div>
+
+      <!-- ==================== 2. 测试金字塔 ==================== -->
+      <h2>测试金字塔：测什么、怎么测</h2>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🔺 测试金字塔（点击每层了解详情）</h4>
+        </div>
+
+        <div class="pyramid-container">
+          <div class="pyramid">
+            <div class="pyramid-level l-e2e" data-level="e2e">🖥️ E2E 测试（少量）</div>
+            <div class="pyramid-level l-integration" data-level="integration">🔗 集成测试（适量）</div>
+            <div class="pyramid-level l-unit" data-level="unit">✅ 单元测试（大量）← 重点学这个！</div>
+          </div>
+        </div>
+
+        <div class="pyramid-detail" id="pyramidDetail">
+          <div class="pd-title" id="pdTitle"></div>
+          <div class="pd-body" id="pdBody"></div>
+        </div>
+      </div>
+
+      <!-- ==================== 3. pytest 基础 ==================== -->
+      <h2>pytest 入门：写你的第一个测试</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🆚 unittest vs pytest</div>
+        Python 内置了 <code>unittest</code>（需要写类、用 <code>self.assertEqual()</code>），但社区更推荐 <strong>pytest</strong>：<br>
+        ✅ 直接写函数，不用写类<br>
+        ✅ 用 Python 原生 <code>assert</code>，不用记一堆 <code>self.assertXxx</code><br>
+        ✅ 报错信息超级详细，一眼看出哪里不对<br>
+        ✅ 丰富的插件生态（Django、异步、覆盖率...）
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>▶️ 运行你的第一个 pytest</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-green" id="firstTestBtn">▶ pytest test_math.py -v</button>
+          </div>
+        </div>
+
+        <div class="pytest-editor">
+          <div class="pytest-code">
+            <span class="cm"># test_math.py</span><br><br>
+            <span class="kw">def</span> <span class="fn">add</span>(a, b):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> a + b<br><br>
+            <span class="kw">def</span> <span class="fn">divide</span>(a, b):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> b == <span class="num">0</span>:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">raise</span> ValueError(<span class="str">"除数不能为0"</span>)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> a / b<br><br>
+            <span class="cm"># ---------- 测试 ----------</span><br><br>
+            <span class="kw">def</span> <span class="fn">test_add</span>():<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> add(<span class="num">1</span>, <span class="num">2</span>) == <span class="num">3</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> add(-<span class="num">1</span>, <span class="num">1</span>) == <span class="num">0</span><br><br>
+            <span class="kw">def</span> <span class="fn">test_divide</span>():<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> divide(<span class="num">10</span>, <span class="num">2</span>) == <span class="num">5.0</span><br><br>
+            <span class="kw">def</span> <span class="fn">test_divide_by_zero</span>():<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">import</span> pytest<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">with</span> pytest.raises(ValueError):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;divide(<span class="num">10</span>, <span class="num">0</span>)
+          </div>
+          <div class="terminal" id="firstTestOutput">
+            <span class="t-dim">点击上方按钮运行测试...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="key-point">
+        <strong>pytest 的约定：</strong><br>
+        1. 测试文件命名 <code>test_*.py</code> 或 <code>*_test.py</code><br>
+        2. 测试函数命名 <code>test_*</code><br>
+        3. 用 <code>assert</code> 断言，不需要 import 任何东西<br>
+        4. 运行：<code>pytest</code>（自动发现所有测试）
+      </div>
+
+      <!-- ==================== 4. 断言详解 ==================== -->
+      <h2>pytest 断言速查</h2>
+      <p>pytest 最大的优点：<strong>直接用 assert</strong>，不需要记 <code>self.assertEqual</code> 之类的。点击查看每种断言的用法：</p>
+
+      <div class="assert-grid" id="assertGrid">
+        <div class="assert-card" data-assert="eq">
+          <div class="ac-code">assert a == b</div>
+          <div class="ac-desc">相等判断</div>
+        </div>
+        <div class="assert-card" data-assert="neq">
+          <div class="ac-code">assert a != b</div>
+          <div class="ac-desc">不相等判断</div>
+        </div>
+        <div class="assert-card" data-assert="true">
+          <div class="ac-code">assert x</div>
+          <div class="ac-desc">真值判断</div>
+        </div>
+        <div class="assert-card" data-assert="in">
+          <div class="ac-code">assert a in b</div>
+          <div class="ac-desc">包含判断</div>
+        </div>
+        <div class="assert-card" data-assert="isinstance">
+          <div class="ac-code">assert isinstance(x, T)</div>
+          <div class="ac-desc">类型判断</div>
+        </div>
+        <div class="assert-card" data-assert="raises">
+          <div class="ac-code">pytest.raises(Exc)</div>
+          <div class="ac-desc">异常判断</div>
+        </div>
+        <div class="assert-card" data-assert="approx">
+          <div class="ac-code">assert a == pytest.approx(b)</div>
+          <div class="ac-desc">浮点近似</div>
+        </div>
+        <div class="assert-card" data-assert="len">
+          <div class="ac-code">assert len(x) == n</div>
+          <div class="ac-desc">长度判断</div>
+        </div>
+      </div>
+      <div class="assert-detail" id="assertDetail">
+        <div id="assertTitle" style="font-weight:700;font-size:15px;margin-bottom:6px"></div>
+        <div id="assertDesc" style="font-size:13px;line-height:1.7;color:var(--text-sub)"></div>
+        <div class="assert-example" id="assertExample"></div>
+      </div>
+
+      <!-- ==================== 5. 参数化测试 ==================== -->
+      <h2>进阶：参数化测试</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">📋 一个函数，多组数据</div>
+        如果要测试 <code>add(1,2)==3</code>、<code>add(-1,-2)==-3</code>、<code>add(0,0)==0</code>...<br>
+        不需要写三个测试函数！用 <code>@pytest.mark.parametrize</code> 一次搞定。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>📊 参数化测试演示</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-green" id="paramTestBtn">▶ 运行参数化测试</button>
+          </div>
+        </div>
+
+        <div class="pytest-editor">
+          <div class="pytest-code">
+            <span class="kw">import</span> pytest<br><br>
+            <span class="kw">def</span> <span class="fn">is_even</span>(n):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> n % <span class="num">2</span> == <span class="num">0</span><br><br>
+            <span class="dec">@pytest.mark.parametrize</span>(<span class="str">"number, expected"</span>, [<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;(<span class="num">2</span>, <span class="num">True</span>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 正偶数</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;(<span class="num">3</span>, <span class="num">False</span>),&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 正奇数</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;(<span class="num">0</span>, <span class="num">True</span>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 零</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;(-<span class="num">4</span>, <span class="num">True</span>),&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 负偶数</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;(-<span class="num">7</span>, <span class="num">False</span>),&nbsp;&nbsp;&nbsp;<span class="cm"># 负奇数</span><br>
+            ])<br>
+            <span class="kw">def</span> <span class="fn">test_is_even</span>(number, expected):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> is_even(number) == expected
+          </div>
+          <div class="terminal" id="paramTestOutput">
+            <span class="t-dim">点击上方按钮运行测试...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 6. Fixture ==================== -->
+      <h2>进阶：Fixture（测试夹具）</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🧹 类比：做实验前要准备器材</div>
+        做化学实验前要准备烧杯、试剂（<strong>setup</strong>）；实验结束后要洗烧杯、清理桌面（<strong>teardown</strong>）。<br>
+        pytest 的 <code>fixture</code> 就是自动帮你做「准备」和「清理」的工具。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🔧 Fixture 执行流程</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="fixtureStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="fixtureAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="fixtureResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="fixture-flow">
+          <div class="pytest-code" style="font-size:12px;margin-bottom:16px">
+            <span class="kw">import</span> pytest<br><br>
+            <span class="dec">@pytest.fixture</span><br>
+            <span class="kw">def</span> <span class="fn">db_connection</span>():<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;conn = create_connection()&nbsp;&nbsp;<span class="cm"># ← setup: 创建连接</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">yield</span> conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># ← 把连接交给测试用</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;conn.close()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># ← teardown: 关闭连接</span><br><br>
+            <span class="kw">def</span> <span class="fn">test_query</span>(db_connection):&nbsp;&nbsp;<span class="cm"># ← 自动注入 fixture</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;result = db_connection.execute(<span class="str">"SELECT 1"</span>)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> result == <span class="num">1</span>
+          </div>
+
+          <div class="fixture-steps">
+            <div class="fixture-step" id="fixStep0">
+              <span class="fs-icon">📋</span>
+              <span class="fs-label">发现 fixture</span>
+              <span class="fs-desc">pytest 发现 test_query 需要 db_connection fixture</span>
+              <span class="fs-code">自动注入</span>
+            </div>
+            <div class="fixture-step" id="fixStep1">
+              <span class="fs-icon">🔧</span>
+              <span class="fs-label">Setup</span>
+              <span class="fs-desc">执行 fixture 函数到 yield 之前：创建数据库连接</span>
+              <span class="fs-code">create_connection()</span>
+            </div>
+            <div class="fixture-step" id="fixStep2">
+              <span class="fs-icon">🧪</span>
+              <span class="fs-label">运行测试</span>
+              <span class="fs-desc">yield 的值作为参数传给 test_query，执行测试代码</span>
+              <span class="fs-code">assert result == 1</span>
+            </div>
+            <div class="fixture-step" id="fixStep3">
+              <span class="fs-icon">🧹</span>
+              <span class="fs-label">Teardown</span>
+              <span class="fs-desc">测试结束后，执行 yield 之后的代码：关闭连接</span>
+              <span class="fs-code">conn.close()</span>
+            </div>
+            <div class="fixture-step" id="fixStep4">
+              <span class="fs-icon">✅</span>
+              <span class="fs-label">完成</span>
+              <span class="fs-desc">测试通过！fixture 保证了每次测试都有干净的环境</span>
+              <span class="fs-code">PASSED</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-narr" id="fixtureNarr">👆 点击「下一步」，看 fixture 的 setup → 测试 → teardown 完整流程。</div>
+        <div class="step-counter" id="fixtureCounter">第 0 / 5 步</div>
+      </div>
+
+      <div class="key-point">
+        <strong>常用 fixture 场景：</strong><br>
+        数据库连接 / 测试用户 / 临时文件 / API 客户端 / Mock 对象<br>
+        <code>@pytest.fixture(scope="session")</code> → 整个测试会话只执行一次<br>
+        <code>@pytest.fixture(scope="function")</code> → 每个测试函数执行一次（默认）
+      </div>
+
+      <!-- ==================== 7. 完整实战 ==================== -->
+      <h2>完整实战：测试一个用户注册模块</h2>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🚀 实战演示</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-green" id="fullTestBtn">▶ pytest test_user.py -v</button>
+          </div>
+        </div>
+
+        <div class="pytest-editor">
+          <div class="pytest-code" style="font-size:12px">
+            <span class="cm"># user.py — 业务代码</span><br>
+            <span class="kw">import</span> re<br><br>
+            <span class="kw">def</span> <span class="fn">validate_email</span>(email):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if not</span> re.match(<span class="str">r'^[\w.+-]+@[\w-]+\.[\w.]+$'</span>, email):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">raise</span> ValueError(<span class="str">"邮箱格式无效"</span>)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="num">True</span><br><br>
+            <span class="kw">def</span> <span class="fn">validate_password</span>(password):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> len(password) &lt; <span class="num">8</span>:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">raise</span> ValueError(<span class="str">"密码至少8位"</span>)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if not</span> re.search(<span class="str">r'\d'</span>, password):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">raise</span> ValueError(<span class="str">"密码必须包含数字"</span>)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="num">True</span><br><br>
+            <span class="cm"># test_user.py — 测试代码</span><br>
+            <span class="kw">import</span> pytest<br><br>
+            <span class="kw">class</span> <span class="fn">TestValidateEmail</span>:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">test_valid_email</span>(self):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> validate_email(<span class="str">"alice@example.com"</span>) == <span class="num">True</span><br><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">test_invalid_email</span>(self):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">with</span> pytest.raises(ValueError, match=<span class="str">"邮箱格式无效"</span>):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;validate_email(<span class="str">"not-an-email"</span>)<br><br>
+            <span class="dec">@pytest.mark.parametrize</span>(<span class="str">"password, error_msg"</span>, [<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;(<span class="str">"short"</span>, <span class="str">"密码至少8位"</span>),<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;(<span class="str">"nonnumber"</span>, <span class="str">"密码必须包含数字"</span>),<br>
+            ])<br>
+            <span class="kw">def</span> <span class="fn">test_invalid_password</span>(password, error_msg):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">with</span> pytest.raises(ValueError, match=error_msg):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;validate_password(password)<br><br>
+            <span class="kw">def</span> <span class="fn">test_valid_password</span>():<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> validate_password(<span class="str">"secure123"</span>) == <span class="num">True</span>
+          </div>
+          <div class="terminal" id="fullTestOutput">
+            <span class="t-dim">点击上方按钮运行测试...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 8. 常用命令 ==================== -->
+      <h2>pytest 常用命令速查</h2>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>命令</th><th>作用</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>pytest</code></td><td>运行当前目录下所有测试</td></tr>
+          <tr><td><code>pytest test_math.py</code></td><td>运行指定文件</td></tr>
+          <tr><td><code>pytest -v</code></td><td>详细输出（显示每个测试的名字和结果）</td></tr>
+          <tr><td><code>pytest -x</code></td><td>遇到第一个失败就停止</td></tr>
+          <tr><td><code>pytest -k "email"</code></td><td>只运行名字包含 "email" 的测试</td></tr>
+          <tr><td><code>pytest --tb=short</code></td><td>简短的错误堆栈</td></tr>
+          <tr><td><code>pytest --cov=myapp</code></td><td>测试覆盖率报告（需安装 pytest-cov）</td></tr>
+          <tr><td><code>pip install pytest pytest-django</code></td><td>安装 pytest 和 Django 插件</td></tr>
+        </tbody>
+      </table>
+
+      <div class="key-point">
+        <strong>Django 项目中使用 pytest：</strong><br>
+        1. <code>pip install pytest-django</code><br>
+        2. 创建 <code>pytest.ini</code>，写入 <code>[pytest]</code> 和 <code>DJANGO_SETTINGS_MODULE = myproject.settings</code><br>
+        3. 运行 <code>pytest</code>（替代 <code>python manage.py test</code>）
+      </div>
+
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 西南科技大学蓝鲸Sass开发课程</p>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ===================== 1. Bug 场景步进器 ===================== */
+    (function bugDemo() {
+      const steps = [
+        {
+          codeTitle: '📝 业务代码：calculate_price()',
+          code: '<span class="cm"># 计算商品总价</span><br><span class="kw">def</span> calculate_price(price, quantity):<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> price * quantity',
+          codeClass: '', testTitle: '🧪 测试代码', testClass: '',
+          test: '<span style="color:#9ca3af">（还没写测试...）</span>',
+          result: '初始状态：函数写好了，但没写测试。', resultClass: 'neutral',
+          narr: '📝 同事 A 写了一个 <code>calculate_price()</code> 函数。功能很简单：单价 × 数量 = 总价。<br>他手动试了一下 <code>calculate_price(100, 2)</code> 得到 200，觉得没问题就提交了。'
+        },
+        {
+          codeTitle: '📝 业务代码：calculate_price()',
+          code: '<span class="cm"># 计算商品总价</span><br><span class="kw">def</span> calculate_price(price, quantity):<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> price * quantity',
+          codeClass: '', testTitle: '🧪 测试代码', testClass: '',
+          test: '<span style="color:#9ca3af">（还没写测试...）</span>',
+          result: '⏰ 一个月后...', resultClass: 'neutral',
+          narr: '⏰ <strong>一个月后</strong>，产品经理说：「加一个功能——满 100 打 8 折！」<br>同事 B 来修改这个函数...'
+        },
+        {
+          codeTitle: '📝 同事 B 修改了代码',
+          code: '<span class="cm"># 计算商品总价（加了折扣）</span><br><span class="kw">def</span> calculate_price(price, quantity, <span class="hl-change">discount=1.0</span>):<br>&nbsp;&nbsp;&nbsp;&nbsp;total = price * quantity<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> total >= <span class="num">100</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> total * <span class="hl-bug">discount</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> total',
+          codeClass: 'has-bug', testTitle: '🧪 测试代码', testClass: '',
+          test: '<span style="color:#9ca3af">（还是没写测试...）</span>',
+          result: '⚠️ 代码被修改了...', resultClass: 'neutral',
+          narr: '🐛 同事 B 加了折扣逻辑，但<strong>没注意到</strong>：当 <code>discount</code> 默认值为 1.0 时，<code>total * 1.0</code> 返回的是 <strong>浮点数</strong>！<br>比如 <code>calculate_price(50, 2)</code> 之前返回 <code>100</code>（int），现在返回 <code>100.0</code>（float）。<br>如果下游代码用 <code>== 100</code> 判断，就<strong>悄悄出 bug</strong> 了。'
+        },
+        {
+          codeTitle: '📝 同事 B 修改了代码',
+          code: '<span class="cm"># 计算商品总价（加了折扣）</span><br><span class="kw">def</span> calculate_price(price, quantity, <span class="hl-change">discount=1.0</span>):<br>&nbsp;&nbsp;&nbsp;&nbsp;total = price * quantity<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> total >= <span class="num">100</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> total * <span class="hl-bug">discount</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> total',
+          codeClass: 'has-bug', testTitle: '🧪 测试代码', testClass: '',
+          test: '<span style="color:#9ca3af">（还是没写测试...）</span>',
+          result: '🐛 bug 上线了，三天后客户投诉...', resultClass: 'fail',
+          narr: '💥 <strong>三天后</strong>，客户反馈：「我的订单金额怎么显示不对？」<br>排查了 2 小时才发现是这个函数改坏了。如果有测试，<strong>改代码的那一刻就能发现</strong>。'
+        },
+        {
+          codeTitle: '📝 业务代码（正确版）',
+          code: '<span class="cm"># 计算商品总价</span><br><span class="kw">def</span> calculate_price(price, quantity):<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> price * quantity',
+          codeClass: 'safe', testTitle: '🧪 如果一开始就写了测试...', testClass: 'safe',
+          test: '<span class="kw">def</span> <span class="fn">test_basic</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> calculate_price(<span class="num">100</span>, <span class="num">2</span>) == <span class="num">200</span><br><br><span class="kw">def</span> <span class="fn">test_return_type</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;result = calculate_price(<span class="num">50</span>, <span class="num">2</span>)<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> <span class="kw">isinstance</span>(result, <span class="num">int</span>)',
+          result: '✅ 回到起点，这次先写测试！', resultClass: 'pass',
+          narr: '⏪ <strong>让我们回到起点。</strong>这次同事 A 在写完函数后，<strong>立刻写了测试</strong>。<br>测试不仅验证了计算结果，还验证了返回类型必须是整数。'
+        },
+        {
+          codeTitle: '📝 同事 B 再次修改代码',
+          code: '<span class="cm"># 计算商品总价（加了折扣）</span><br><span class="kw">def</span> calculate_price(price, quantity, discount=1.0):<br>&nbsp;&nbsp;&nbsp;&nbsp;total = price * quantity<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> total >= <span class="num">100</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> total * discount<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> total',
+          codeClass: 'has-bug', testTitle: '🧪 运行测试...', testClass: 'safe',
+          test: '<span class="kw">def</span> <span class="fn">test_basic</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> calculate_price(<span class="num">100</span>, <span class="num">2</span>) == <span class="num">200</span><br><br><span class="kw">def</span> <span class="fn">test_return_type</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;result = calculate_price(<span class="num">50</span>, <span class="num">2</span>)<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> <span class="kw">isinstance</span>(result, <span class="num">int</span>) <span class="hl-bug">← FAILED!</span>',
+          result: '🚨 测试立刻报错！bug 在上线前就被发现！', resultClass: 'fail',
+          narr: '🚨 同事 B 修改代码后运行 <code>pytest</code> → <code>test_return_type</code> <strong>立刻失败</strong>！<br>报错信息清楚地告诉他：<code>isinstance(100.0, int)</code> 是 False。<br>他立刻意识到返回类型变了，修复后再提交。<strong>bug 根本没机会上线！</strong>'
+        },
+        {
+          codeTitle: '📝 同事 B 修复后的代码',
+          code: '<span class="cm"># 计算商品总价（正确的折扣实现）</span><br><span class="kw">def</span> calculate_price(price, quantity, discount=1.0):<br>&nbsp;&nbsp;&nbsp;&nbsp;total = price * quantity<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> total >= <span class="num">100</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="hl-good">int(total * discount)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> total',
+          codeClass: 'safe', testTitle: '🧪 所有测试通过！', testClass: 'safe',
+          test: '<span class="kw">def</span> <span class="fn">test_basic</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> calculate_price(<span class="num">100</span>, <span class="num">2</span>) == <span class="num">200</span> <span class="hl-good">✓</span><br><br><span class="kw">def</span> <span class="fn">test_return_type</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;result = calculate_price(<span class="num">50</span>, <span class="num">2</span>)<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> <span class="kw">isinstance</span>(result, <span class="num">int</span>) <span class="hl-good">✓</span><br><br><span class="kw">def</span> <span class="fn">test_discount</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="assert-kw">assert</span> calculate_price(<span class="num">100</span>, <span class="num">2</span>, <span class="num">0.8</span>) == <span class="num">160</span> <span class="hl-good">✓</span>',
+          result: '✅ 所有测试通过！安全上线！', resultClass: 'pass',
+          narr: '🎉 <strong>完美！</strong>同事 B 加了 <code>int()</code> 转换，还补充了折扣功能的测试。<br>所有测试通过 → 安全提交 → 安全上线。<br><br>💡 <strong>这就是测试的价值：</strong>它不是在浪费时间，而是帮你<strong>省下排 bug 的十倍时间</strong>。'
+        },
+      ];
+
+      let current = -1, autoTimer = null;
+      const narrEl = document.getElementById('bugNarr');
+      const counterEl = document.getElementById('bugCounter');
+      const stepBtn = document.getElementById('bugStepBtn');
+      const autoBtn = document.getElementById('bugAutoBtn');
+      const resetBtn = document.getElementById('bugResetBtn');
+
+      function apply(idx) {
+        const s = steps[idx];
+        document.getElementById('bugCodeTitle').innerHTML = s.codeTitle;
+        document.getElementById('bugCodeBody').innerHTML = s.code;
+        document.getElementById('bugCodePanel').className = 'bug-code-panel' + (s.codeClass ? ' ' + s.codeClass : '');
+        document.getElementById('bugTestTitle').innerHTML = s.testTitle;
+        document.getElementById('bugTestBody').innerHTML = s.test;
+        document.getElementById('bugTestPanel').className = 'bug-code-panel' + (s.testClass ? ' ' + s.testClass : '');
+        const result = document.getElementById('bugResult');
+        result.textContent = s.result; result.className = 'bug-result ' + s.resultClass;
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        document.getElementById('bugCodeTitle').innerHTML = '📝 业务代码：calculate_price()';
+        document.getElementById('bugCodeBody').innerHTML = '<span class="cm"># 计算商品总价</span><br><span class="kw">def</span> calculate_price(price, quantity):<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> price * quantity';
+        document.getElementById('bugCodePanel').className = 'bug-code-panel';
+        document.getElementById('bugTestTitle').innerHTML = '🧪 测试代码';
+        document.getElementById('bugTestBody').innerHTML = '<span style="color:#9ca3af">（还没写测试...）</span>';
+        document.getElementById('bugTestPanel').className = 'bug-code-panel';
+        document.getElementById('bugResult').textContent = '等待开始演示...';
+        document.getElementById('bugResult').className = 'bug-result neutral';
+        narrEl.innerHTML = '👆 点击「下一步」，看一个真实的 bug 是如何产生的，以及测试如何拯救你。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 3000);
+      });
+    })();
+
+    /* ===================== 2. 测试金字塔 ===================== */
+    (function pyramidDemo() {
+      const data = {
+        unit: {
+          title: '✅ 单元测试 — 数量最多，速度最快',
+          body: '测试<strong>单个函数或方法</strong>是否正确。<br>不依赖数据库、网络等外部资源，运行速度极快（毫秒级）。<br><br><strong>示例：</strong><code>test_add()</code>、<code>test_validate_email()</code><br><strong>工具：</strong><code>pytest</code><br><strong>占比：</strong>应占测试总量的 70%~80%<br><br>📌 <strong>这就是本节课重点学习的内容！</strong>'
+        },
+        integration: {
+          title: '🔗 集成测试 — 数量适中',
+          body: '测试<strong>多个模块协作</strong>是否正确。比如：视图 + 数据库 + 序列化器一起工作。<br>需要真实数据库或测试数据库，速度较慢。<br><br><strong>示例：</strong>Django 的 <code>TestCase</code> + <code>Client</code> 测试 API 接口<br><strong>工具：</strong><code>pytest-django</code><br><strong>占比：</strong>约 15%~20%'
+        },
+        e2e: {
+          title: '🖥️ 端到端测试 (E2E) — 数量最少',
+          body: '模拟<strong>真实用户操作</strong>（打开浏览器、点击按钮、填表单...）。<br>速度最慢，最脆弱（UI 一改就容易挂），但最贴近真实场景。<br><br><strong>示例：</strong>用 Selenium 测试「注册→登录→下单」完整流程<br><strong>工具：</strong>Selenium、Playwright<br><strong>占比：</strong>约 5%~10%'
+        }
+      };
+
+      const panel = document.getElementById('pyramidDetail');
+      const titleEl = document.getElementById('pdTitle');
+      const bodyEl = document.getElementById('pdBody');
+
+      document.querySelectorAll('.pyramid-level').forEach(el => {
+        el.addEventListener('click', () => {
+          const level = el.dataset.level;
+          const d = data[level];
+          document.querySelectorAll('.pyramid-level').forEach(l => l.classList.remove('active'));
+          el.classList.add('active');
+          titleEl.innerHTML = d.title;
+          bodyEl.innerHTML = d.body;
+          panel.classList.add('visible');
+        });
+      });
+    })();
+
+    /* ===================== 3. 第一个 pytest 终端模拟 ===================== */
+    (function firstTestDemo() {
+      const btn = document.getElementById('firstTestBtn');
+      const output = document.getElementById('firstTestOutput');
+
+      const lines = [
+        { cls: 't-cmd', text: '$ pytest test_math.py -v' },
+        { cls: 't-dim', text: '======================== test session starts ========================' },
+        { cls: 't-info', text: 'platform darwin -- Python 3.11.0, pytest-7.4.0' },
+        { cls: 't-info', text: 'collected 3 items' },
+        { cls: 't-dim', text: '' },
+        { cls: 't-pass', text: 'test_math.py::test_add PASSED                                 [ 33%]' },
+        { cls: 't-pass', text: 'test_math.py::test_divide PASSED                              [ 66%]' },
+        { cls: 't-pass', text: 'test_math.py::test_divide_by_zero PASSED                      [100%]' },
+        { cls: 't-dim', text: '' },
+        { cls: 't-pass', text: '========================= 3 passed in 0.02s =========================' },
+      ];
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        output.innerHTML = '';
+        for (const line of lines) {
+          const div = document.createElement('div');
+          div.className = 't-line ' + line.cls;
+          div.textContent = line.text || '\u00a0';
+          output.appendChild(div);
+          await new Promise(r => setTimeout(r, 180));
+        }
+        btn.disabled = false;
+      });
+    })();
+
+    /* ===================== 4. 断言探索器 ===================== */
+    (function assertDemo() {
+      const data = {
+        eq: { title: 'assert a == b — 相等判断', desc: '最常用的断言，检查两个值是否相等。pytest 失败时会详细显示两个值的差异。',
+          example: 'assert add(1, 2) == 3\nassert user.name == "Alice"\nassert response.status_code == 200' },
+        neq: { title: 'assert a != b — 不相等判断', desc: '检查两个值不相等。',
+          example: 'assert get_id() != None\nassert result != old_result' },
+        'true': { title: 'assert x — 真值判断', desc: '检查表达式为真值（True、非零、非空...）。',
+          example: 'assert is_valid(email)\nassert len(users) > 0\nassert response.ok' },
+        'in': { title: 'assert a in b — 包含判断', desc: '检查元素是否在集合/字符串/列表中。',
+          example: 'assert "alice" in users\nassert "error" in response.text\nassert 404 in [200, 404, 500]' },
+        isinstance: { title: 'assert isinstance(x, T) — 类型判断', desc: '检查对象是否是某个类型。',
+          example: 'assert isinstance(result, dict)\nassert isinstance(user, User)\nassert isinstance(price, (int, float))' },
+        raises: { title: 'pytest.raises(Exception) — 异常判断', desc: '验证代码是否抛出了预期的异常。可以用 match 参数检查异常消息。',
+          example: 'with pytest.raises(ValueError):\n    int("abc")\n\nwith pytest.raises(ValueError, match="无效"):\n    validate(-1)' },
+        approx: { title: 'pytest.approx() — 浮点近似', desc: '浮点数比较容易因精度问题出错（0.1 + 0.2 != 0.3），用 approx 解决。',
+          example: 'assert 0.1 + 0.2 == pytest.approx(0.3)\nassert result == pytest.approx(3.14, abs=0.01)' },
+        len: { title: 'assert len(x) == n — 长度判断', desc: '检查列表、字符串等的长度。',
+          example: 'assert len(users) == 3\nassert len(password) >= 8\nassert len(response.json()) > 0' },
+      };
+
+      const panel = document.getElementById('assertDetail');
+      const titleEl = document.getElementById('assertTitle');
+      const descEl = document.getElementById('assertDesc');
+      const exampleEl = document.getElementById('assertExample');
+
+      document.querySelectorAll('.assert-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const key = card.dataset.assert;
+          const d = data[key];
+          document.querySelectorAll('.assert-card').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          titleEl.textContent = d.title;
+          descEl.textContent = d.desc;
+          exampleEl.textContent = d.example;
+          panel.classList.add('visible');
+        });
+      });
+    })();
+
+    /* ===================== 5. 参数化测试终端 ===================== */
+    (function paramTestDemo() {
+      const btn = document.getElementById('paramTestBtn');
+      const output = document.getElementById('paramTestOutput');
+
+      const lines = [
+        { cls: 't-cmd', text: '$ pytest test_even.py -v' },
+        { cls: 't-dim', text: '======================== test session starts ========================' },
+        { cls: 't-info', text: 'collected 5 items' },
+        { cls: 't-dim', text: '' },
+        { cls: 't-pass', text: 'test_even.py::test_is_even[2-True] PASSED                      [ 20%]' },
+        { cls: 't-pass', text: 'test_even.py::test_is_even[3-False] PASSED                     [ 40%]' },
+        { cls: 't-pass', text: 'test_even.py::test_is_even[0-True] PASSED                      [ 60%]' },
+        { cls: 't-pass', text: 'test_even.py::test_is_even[-4-True] PASSED                     [ 80%]' },
+        { cls: 't-pass', text: 'test_even.py::test_is_even[-7-False] PASSED                    [100%]' },
+        { cls: 't-dim', text: '' },
+        { cls: 't-pass', text: '========================= 5 passed in 0.01s =========================' },
+      ];
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        output.innerHTML = '';
+        for (const line of lines) {
+          const div = document.createElement('div');
+          div.className = 't-line ' + line.cls;
+          div.textContent = line.text || '\u00a0';
+          output.appendChild(div);
+          await new Promise(r => setTimeout(r, 150));
+        }
+        btn.disabled = false;
+      });
+    })();
+
+    /* ===================== 6. Fixture 步进器 ===================== */
+    (function fixtureDemo() {
+      const stepClasses = [
+        ['active-setup', '', '', '', ''],
+        ['done', 'active-setup', '', '', ''],
+        ['done', 'done', 'active-test', '', ''],
+        ['done', 'done', 'done', 'active-teardown', ''],
+        ['done', 'done', 'done', 'done', 'active-test'],
+      ];
+      const narrs = [
+        '📋 pytest 扫描测试函数，发现 <code>test_query</code> 的参数中有 <code>db_connection</code> —— 这和一个 fixture 同名！自动触发注入。',
+        '🔧 <strong>Setup 阶段：</strong>执行 fixture 函数到 <code>yield</code> 之前。这里创建了数据库连接 <code>conn</code>。',
+        '🧪 <strong>运行测试：</strong><code>yield conn</code> 把连接对象传给测试函数。测试代码使用这个连接执行查询并断言结果。',
+        '🧹 <strong>Teardown 阶段：</strong>测试结束后（无论成功还是失败），执行 <code>yield</code> 之后的代码 —— 关闭连接，清理资源。',
+        '✅ <strong>全部完成！</strong>fixture 保证了：每次测试前自动准备环境，测试后自动清理。<br>你不需要手动写 setup/teardown，代码更干净。',
+      ];
+
+      let current = -1, autoTimer = null;
+      const narrEl = document.getElementById('fixtureNarr');
+      const counterEl = document.getElementById('fixtureCounter');
+      const stepBtn = document.getElementById('fixtureStepBtn');
+      const autoBtn = document.getElementById('fixtureAutoBtn');
+      const resetBtn = document.getElementById('fixtureResetBtn');
+      const fixSteps = [0,1,2,3,4].map(i => document.getElementById('fixStep' + i));
+
+      function apply(idx) {
+        const cls = stepClasses[idx];
+        fixSteps.forEach((el, i) => {
+          el.className = 'fixture-step' + (cls[i] ? ' ' + cls[i] : '');
+        });
+        narrEl.innerHTML = narrs[idx];
+        counterEl.textContent = `第 ${idx + 1} / ${stepClasses.length} 步`;
+        stepBtn.disabled = idx >= stepClasses.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        fixSteps.forEach(el => el.className = 'fixture-step');
+        narrEl.innerHTML = '👆 点击「下一步」，看 fixture 的 setup → 测试 → teardown 完整流程。';
+        counterEl.textContent = `第 0 / ${stepClasses.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < stepClasses.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < stepClasses.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 2200);
+      });
+    })();
+
+    /* ===================== 7. 完整实战终端 ===================== */
+    (function fullTestDemo() {
+      const btn = document.getElementById('fullTestBtn');
+      const output = document.getElementById('fullTestOutput');
+
+      const lines = [
+        { cls: 't-cmd', text: '$ pytest test_user.py -v' },
+        { cls: 't-dim', text: '======================== test session starts ========================' },
+        { cls: 't-info', text: 'platform darwin -- Python 3.11.0, pytest-7.4.0' },
+        { cls: 't-info', text: 'collected 5 items' },
+        { cls: 't-dim', text: '' },
+        { cls: 't-pass', text: 'test_user.py::TestValidateEmail::test_valid_email PASSED        [ 20%]' },
+        { cls: 't-pass', text: 'test_user.py::TestValidateEmail::test_invalid_email PASSED      [ 40%]' },
+        { cls: 't-pass', text: 'test_user.py::test_invalid_password[short-密码至少8位] PASSED    [ 60%]' },
+        { cls: 't-pass', text: 'test_user.py::test_invalid_password[nonnumber-...数字] PASSED   [ 80%]' },
+        { cls: 't-pass', text: 'test_user.py::test_valid_password PASSED                        [100%]' },
+        { cls: 't-dim', text: '' },
+        { cls: 't-pass', text: '========================= 5 passed in 0.03s =========================' },
+        { cls: 't-dim', text: '' },
+        { cls: 't-warn', text: '💡 提示：所有 5 个测试通过！覆盖了正常情况和异常情况。' },
+      ];
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        output.innerHTML = '';
+        for (const line of lines) {
+          const div = document.createElement('div');
+          div.className = 't-line ' + line.cls;
+          div.textContent = line.text || '\u00a0';
+          output.appendChild(div);
+          await new Promise(r => setTimeout(r, 180));
+        }
+        btn.disabled = false;
+      });
+    })();
+
+  })();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,1570 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTTP与网络请求演示 | 西南科技大学蓝鲸Sass开发课程</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <style>
+    /* ===== 通用交互组件 ===== */
+    .demo-card {
+      background: #f5fcf8;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin: 12px 0 20px;
+    }
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .demo-header h4 {
+      margin: 0 !important;
+      padding-left: 0 !important;
+      font-size: 16px;
+      font-weight: 600;
+      color: #245f4c;
+    }
+    .demo-header h4::before { display: none !important; }
+    .demo-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .run-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-family: inherit;
+    }
+    .run-btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+    }
+    .run-btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+    .run-btn-green {
+      background: linear-gradient(135deg, #4ea980, #3d9970);
+      color: #fff;
+    }
+    .run-btn-green:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(78, 169, 128, 0.35);
+    }
+    .run-btn-orange {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+    }
+    .run-btn-orange:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+    .run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    .analogy-box {
+      margin: 16px 0;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1px solid #fde68a;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.85;
+      color: #78350f;
+    }
+    .analogy-box .analogy-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .key-point {
+      margin: 12px 0;
+      padding: 14px 18px;
+      background: #eef9f3;
+      border-left: 4px solid #4ea980;
+      border-radius: 0 10px 10px 0;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #245f4c;
+    }
+    .key-point strong { color: #1f6b4f; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #23916b;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    .back-link:hover { color: #1f6b4f; }
+    .step-narr {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.7;
+      min-height: 44px;
+    }
+    .step-counter {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 8px;
+    }
+
+    /* ===== 1. URL 解剖 ===== */
+    .url-anatomy {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .url-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 14px 18px;
+      background: #1e293b;
+      border-radius: 10px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 15px;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .url-part {
+      padding: 4px 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      white-space: nowrap;
+    }
+    .url-part:hover { transform: translateY(-2px); }
+    .url-part.active { transform: translateY(-3px); filter: brightness(1.2); }
+    .url-part[data-part="protocol"] { color: #f472b6; background: rgba(244,114,182,0.1); }
+    .url-part[data-part="domain"] { color: #60a5fa; background: rgba(96,165,250,0.1); }
+    .url-part[data-part="port"] { color: #fbbf24; background: rgba(251,191,36,0.1); }
+    .url-part[data-part="path"] { color: #34d399; background: rgba(52,211,153,0.1); }
+    .url-part[data-part="query"] { color: #a78bfa; background: rgba(167,139,250,0.1); }
+    .url-part[data-part="fragment"] { color: #fb923c; background: rgba(251,146,60,0.1); }
+    .url-separator { color: #64748b; }
+    .url-info-panel {
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      min-height: 70px;
+      transition: all 0.3s;
+    }
+    .url-info-panel .url-info-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .url-info-panel .url-info-desc {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-sub);
+    }
+    .url-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .url-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .url-legend-item:hover { transform: translateY(-1px); }
+    .url-legend-item .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* ===== 2. DNS 动画 ===== */
+    .dns-scene {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .dns-actors {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      position: relative;
+      min-height: 160px;
+    }
+    @media (max-width: 640px) { .dns-actors { flex-direction: column; align-items: center; } }
+    .dns-actor {
+      text-align: center;
+      flex-shrink: 0;
+      width: 100px;
+      z-index: 2;
+    }
+    .dns-actor-icon {
+      font-size: 36px;
+      margin-bottom: 4px;
+      transition: transform 0.3s;
+    }
+    .dns-actor-icon.pulse { animation: dnsPulse 0.6s ease; }
+    @keyframes dnsPulse { 50% { transform: scale(1.2); } }
+    .dns-actor-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #245f4c;
+    }
+    .dns-actor-detail {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 2px;
+      min-height: 16px;
+    }
+    .dns-packets {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .dns-packet {
+      position: absolute;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      transition: none;
+    }
+    .dns-packet.req { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+    .dns-packet.res { background: #d1fae5; color: #065f46; border: 1px solid #86efac; }
+
+    /* ===== 3. TCP 三次握手 ===== */
+    .tcp-scene {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .tcp-endpoints {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: relative;
+      padding: 0 20px;
+    }
+    .tcp-endpoint {
+      text-align: center;
+      z-index: 2;
+    }
+    .tcp-endpoint-icon { font-size: 40px; }
+    .tcp-endpoint-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #245f4c;
+      margin-top: 4px;
+    }
+    .tcp-endpoint-state {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #f3f4f6;
+      color: #6b7280;
+      margin-top: 4px;
+      display: inline-block;
+      transition: all 0.3s;
+      min-width: 60px;
+    }
+    .tcp-endpoint-state.listen { background: #fef3c7; color: #92400e; }
+    .tcp-endpoint-state.syn-sent { background: #dbeafe; color: #1e40af; }
+    .tcp-endpoint-state.syn-rcvd { background: #ede9fe; color: #5b21b6; }
+    .tcp-endpoint-state.established { background: #d1fae5; color: #065f46; }
+    .tcp-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 20px 40px;
+      position: relative;
+    }
+    .tcp-msg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.4s ease;
+    }
+    .tcp-msg.visible { opacity: 1; transform: translateY(0); }
+    .tcp-msg.to-right { flex-direction: row; }
+    .tcp-msg.to-left { flex-direction: row-reverse; }
+    .tcp-msg-arrow {
+      flex: 1;
+      height: 2px;
+      position: relative;
+    }
+    .tcp-msg.to-right .tcp-msg-arrow { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .tcp-msg.to-left .tcp-msg-arrow { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .tcp-msg.to-right .tcp-msg-arrow::after {
+      content: '→';
+      position: absolute;
+      right: -6px;
+      top: -10px;
+      font-size: 16px;
+      color: #3b82f6;
+    }
+    .tcp-msg.to-left .tcp-msg-arrow::after {
+      content: '←';
+      position: absolute;
+      left: -6px;
+      top: -10px;
+      font-size: 16px;
+      color: #8b5cf6;
+    }
+    .tcp-msg-label {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 90px;
+      text-align: center;
+    }
+    .tcp-msg.to-right .tcp-msg-label { background: #dbeafe; color: #1e40af; }
+    .tcp-msg.to-left .tcp-msg-label { background: #ede9fe; color: #5b21b6; }
+    .tcp-msg-desc {
+      flex-shrink: 0;
+      font-size: 12px;
+      color: var(--text-sub);
+      min-width: 80px;
+    }
+    .tcp-msg.to-right .tcp-msg-desc { text-align: left; }
+    .tcp-msg.to-left .tcp-msg-desc { text-align: right; }
+
+    /* ===== 4. HTTP 请求/响应流程 ===== */
+    .http-flow {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .http-flow-endpoints {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0 10px;
+    }
+    .http-flow-ep {
+      text-align: center;
+    }
+    .http-flow-ep-icon { font-size: 36px; }
+    .http-flow-ep-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #245f4c;
+      margin-top: 4px;
+    }
+    .http-flow-channel {
+      margin: 16px 20px;
+      position: relative;
+    }
+    .http-req-box, .http-res-box {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: all 0.5s ease;
+    }
+    .http-req-box.visible { opacity: 1; transform: translateX(0); }
+    .http-res-box.visible { opacity: 1; transform: translateX(0); }
+    .http-req-box {
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      transform-origin: left;
+    }
+    .http-res-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      transform: translateX(20px);
+      transform-origin: right;
+    }
+    .http-req-line { color: #2563eb; font-weight: 700; }
+    .http-header-line { color: #64748b; }
+    .http-body-line { color: #059669; font-weight: 600; }
+    .http-status-line { color: #16a34a; font-weight: 700; }
+    .http-status-line.error { color: #dc2626; }
+
+    /* ===== 5. HTTP 方法卡片 ===== */
+    .method-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .method-card {
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .method-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+    .method-card.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    .method-card .method-name {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .method-card .method-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+    .method-card .method-django {
+      font-size: 11px;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      background: #f1f5f9;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    .method-card[data-method="GET"] .method-name { color: #16a34a; }
+    .method-card[data-method="POST"] .method-name { color: #2563eb; }
+    .method-card[data-method="PUT"] .method-name { color: #d97706; }
+    .method-card[data-method="PATCH"] .method-name { color: #7c3aed; }
+    .method-card[data-method="DELETE"] .method-name { color: #dc2626; }
+    .method-detail-panel {
+      margin-top: 12px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      min-height: 80px;
+      display: none;
+    }
+    .method-detail-panel.visible { display: block; }
+    .method-detail-panel .md-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+    .method-detail-panel .md-body {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-sub);
+    }
+    .method-detail-panel .md-example {
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: #1e293b;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      color: #a0d8b8;
+      line-height: 1.6;
+    }
+
+    /* ===== 6. 状态码探索器 ===== */
+    .status-explorer {
+      margin: 16px 0;
+    }
+    .status-group {
+      margin-bottom: 16px;
+    }
+    .status-group-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-group-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-group-badge.g2xx { background: #d1fae5; color: #065f46; }
+    .status-group-badge.g3xx { background: #dbeafe; color: #1e40af; }
+    .status-group-badge.g4xx { background: #fef3c7; color: #92400e; }
+    .status-group-badge.g5xx { background: #fee2e2; color: #991b1b; }
+    .status-codes-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .status-code-chip {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .status-code-chip:hover { transform: translateY(-2px); }
+    .status-code-chip.active { box-shadow: 0 0 0 3px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .status-code-chip.s2xx { background: #d1fae5; color: #065f46; }
+    .status-code-chip.s2xx.active { border-color: #059669; }
+    .status-code-chip.s3xx { background: #dbeafe; color: #1e40af; }
+    .status-code-chip.s3xx.active { border-color: #2563eb; }
+    .status-code-chip.s4xx { background: #fef3c7; color: #92400e; }
+    .status-code-chip.s4xx.active { border-color: #d97706; }
+    .status-code-chip.s5xx { background: #fee2e2; color: #991b1b; }
+    .status-code-chip.s5xx.active { border-color: #dc2626; }
+    .status-detail-panel {
+      margin-top: 12px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: 10px;
+      display: none;
+      min-height: 60px;
+    }
+    .status-detail-panel.visible { display: block; }
+    .status-detail-panel .sd-code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .status-detail-panel .sd-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #245f4c;
+    }
+    .status-detail-panel .sd-desc {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-sub);
+      margin-top: 6px;
+    }
+    .status-detail-panel .sd-django {
+      margin-top: 8px;
+      padding: 6px 12px;
+      background: #f0fdf4;
+      border-radius: 6px;
+      font-size: 12px;
+      display: inline-block;
+    }
+
+    /* ===== 7. Cookie/Session 步进器 ===== */
+    .cookie-scene {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .cookie-endpoints {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    @media (max-width: 640px) { .cookie-endpoints { flex-direction: column; } }
+    .cookie-ep {
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .cookie-ep-icon { font-size: 36px; }
+    .cookie-ep-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #245f4c;
+      margin-top: 4px;
+    }
+    .cookie-jar {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      min-height: 50px;
+      min-width: 120px;
+      font-size: 11px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      transition: all 0.3s;
+    }
+    .cookie-jar-title {
+      font-weight: 700;
+      font-size: 11px;
+      color: #92400e;
+      margin-bottom: 4px;
+    }
+    .cookie-item {
+      padding: 2px 0;
+      color: #78350f;
+    }
+    .cookie-channel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+    .cookie-msg {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Consolas', 'Monaco', monospace;
+      opacity: 0;
+      transition: all 0.3s;
+      max-width: 260px;
+      text-align: center;
+    }
+    .cookie-msg.visible { opacity: 1; }
+    .cookie-msg.req-msg { background: #dbeafe; color: #1e40af; }
+    .cookie-msg.res-msg { background: #d1fae5; color: #065f46; }
+    .server-session {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #ede9fe;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      min-height: 50px;
+      min-width: 120px;
+      font-size: 11px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      transition: all 0.3s;
+    }
+    .server-session-title {
+      font-weight: 700;
+      font-size: 11px;
+      color: #5b21b6;
+      margin-bottom: 4px;
+    }
+    .session-item {
+      padding: 2px 0;
+      color: #4c1d95;
+    }
+
+    /* ===== 概念卡 ===== */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .concept-card {
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: 10px;
+      padding: 16px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .concept-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(125, 201, 168, 0.15);
+    }
+    .concept-card .concept-icon { font-size: 28px; margin-bottom: 8px; }
+    .concept-card .concept-name { font-weight: 600; color: #245f4c; font-size: 15px; margin-bottom: 6px; }
+    .concept-card .concept-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+    .concept-card .concept-analogy {
+      font-size: 12px;
+      color: #4ea980;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed #d9efdf;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+      <nav class="nav-links">
+        <a href="../index.html">首页</a>
+        <a href="../courses/course-02.html" data-nav>第二节课</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container course-layout">
+    <a href="../courses/course-02.html" class="back-link">← 返回第二节课</a>
+
+    <article class="panel">
+      <h1>HTTP 与网络请求</h1>
+      <p>当你在浏览器输入一个网址按下回车，背后究竟发生了什么？这个页面用<strong>动画</strong>和<strong>交互</strong>带你走一遍完整流程。</p>
+
+      <!-- ==================== 1. 网络基础概览 ==================== -->
+      <h2>一个请求的完整旅程</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">📮 类比：寄一封信</div>
+        你在浏览器输入 <code>https://www.example.com/users?id=1</code> 就像写了一封信：<br>
+        1️⃣ <strong>查地址</strong>（DNS 解析）—— "www.example.com 住在哪？" → "住在 93.184.216.34"<br>
+        2️⃣ <strong>建联系</strong>（TCP 三次握手）—— "你好，我想和你通信" → "好的" → "开始吧"<br>
+        3️⃣ <strong>寄信</strong>（HTTP 请求）—— 把你的要求发给服务器<br>
+        4️⃣ <strong>收回信</strong>（HTTP 响应）—— 服务器把结果返回给你
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="concept-icon">🌐</div>
+          <div class="concept-name">DNS</div>
+          <div class="concept-desc">把域名翻译成 IP 地址</div>
+          <div class="concept-analogy">📱 通讯录：名字 → 电话号码</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">🤝</div>
+          <div class="concept-name">TCP</div>
+          <div class="concept-desc">可靠的传输协议，保证数据不丢失</div>
+          <div class="concept-analogy">📞 打电话：先拨号确认对方在，再说话</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">📨</div>
+          <div class="concept-name">HTTP</div>
+          <div class="concept-desc">浏览器和服务器之间的「对话格式」</div>
+          <div class="concept-analogy">📝 写信格式：抬头、正文、落款</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">🔒</div>
+          <div class="concept-name">HTTPS</div>
+          <div class="concept-desc">加密的 HTTP，数据传输更安全</div>
+          <div class="concept-analogy">🔐 密封信封，只有收信人能拆</div>
+        </div>
+      </div>
+
+      <!-- ==================== 2. URL 解剖 ==================== -->
+      <h2>图解：URL 的每一部分</h2>
+      <p>点击 URL 的不同部分，了解它们各自的含义：</p>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🔍 URL 解剖台</h4>
+        </div>
+        <div class="url-anatomy">
+          <div class="url-bar" id="urlBar">
+            <span class="url-part" data-part="protocol">https://</span><span class="url-part" data-part="domain">api.example.com</span><span class="url-part" data-part="port">:8080</span><span class="url-part" data-part="path">/v1/users</span><span class="url-part" data-part="query">?name=Alice&age=20</span><span class="url-part" data-part="fragment">#profile</span>
+          </div>
+          <div class="url-legend" id="urlLegend">
+            <span class="url-legend-item" data-part="protocol"><span class="legend-dot" style="background:#f472b6"></span>协议</span>
+            <span class="url-legend-item" data-part="domain"><span class="legend-dot" style="background:#60a5fa"></span>域名</span>
+            <span class="url-legend-item" data-part="port"><span class="legend-dot" style="background:#fbbf24"></span>端口</span>
+            <span class="url-legend-item" data-part="path"><span class="legend-dot" style="background:#34d399"></span>路径</span>
+            <span class="url-legend-item" data-part="query"><span class="legend-dot" style="background:#a78bfa"></span>查询参数</span>
+            <span class="url-legend-item" data-part="fragment"><span class="legend-dot" style="background:#fb923c"></span>锚点</span>
+          </div>
+          <div class="url-info-panel" id="urlInfoPanel">
+            <div class="url-info-title" id="urlInfoTitle">👆 点击上方 URL 的任意部分</div>
+            <div class="url-info-desc" id="urlInfoDesc">了解每个部分的作用和在 Django 中的对应关系</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 3. DNS 解析动画 ==================== -->
+      <h2>图解：DNS 是怎么找到服务器的？</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">📖 类比：查电话簿</div>
+        你知道朋友叫「小明」，但打电话需要号码。DNS 就是互联网的「电话簿」：<br>
+        先查<strong>本地缓存</strong>（手机最近通话）→ 查<strong>运营商 DNS</strong>（114 查号台）→ 查<strong>根域名服务器</strong>（总电话簿）→ 逐级查到具体号码。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🌐 DNS 解析过程</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="dnsStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="dnsAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="dnsResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="dns-scene">
+          <div class="dns-actors">
+            <div class="dns-actor">
+              <div class="dns-actor-icon" id="dnsClient">💻</div>
+              <div class="dns-actor-name">你的浏览器</div>
+              <div class="dns-actor-detail" id="dnsClientDetail"></div>
+            </div>
+            <div class="dns-actor">
+              <div class="dns-actor-icon" id="dnsLocal">📋</div>
+              <div class="dns-actor-name">本地缓存</div>
+              <div class="dns-actor-detail" id="dnsLocalDetail"></div>
+            </div>
+            <div class="dns-actor">
+              <div class="dns-actor-icon" id="dnsISP">🏢</div>
+              <div class="dns-actor-name">运营商 DNS</div>
+              <div class="dns-actor-detail" id="dnsISPDetail"></div>
+            </div>
+            <div class="dns-actor">
+              <div class="dns-actor-icon" id="dnsRoot">🌍</div>
+              <div class="dns-actor-name">根/权威 DNS</div>
+              <div class="dns-actor-detail" id="dnsRootDetail"></div>
+            </div>
+            <div class="dns-actor">
+              <div class="dns-actor-icon" id="dnsServer">🖥️</div>
+              <div class="dns-actor-name">目标服务器</div>
+              <div class="dns-actor-detail" id="dnsServerDetail">93.184.216.34</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-narr" id="dnsNarr">👆 点击「下一步」，看浏览器是怎么一步步找到服务器 IP 地址的。</div>
+        <div class="step-counter" id="dnsCounter">第 0 / 6 步</div>
+      </div>
+
+      <!-- ==================== 4. TCP 三次握手 ==================== -->
+      <h2>图解：TCP 三次握手</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">📞 类比：打电话</div>
+        你：「喂，听得到吗？」（SYN）<br>
+        对方：「听得到，你呢？」（SYN + ACK）<br>
+        你：「我也听得到，开始说吧！」（ACK）<br>
+        三次确认后，双方才开始正式通信。这就是 <strong>TCP 三次握手</strong>。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🤝 TCP 三次握手</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="tcpStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="tcpAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="tcpResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="tcp-scene">
+          <div class="tcp-endpoints">
+            <div class="tcp-endpoint">
+              <div class="tcp-endpoint-icon">💻</div>
+              <div class="tcp-endpoint-name">客户端（浏览器）</div>
+              <div class="tcp-endpoint-state" id="tcpClientState">CLOSED</div>
+            </div>
+            <div class="tcp-endpoint">
+              <div class="tcp-endpoint-icon">🖥️</div>
+              <div class="tcp-endpoint-name">服务器</div>
+              <div class="tcp-endpoint-state" id="tcpServerState">LISTEN</div>
+            </div>
+          </div>
+
+          <div class="tcp-messages">
+            <div class="tcp-msg to-right" id="tcpMsg0">
+              <div class="tcp-msg-desc">第1次</div>
+              <div class="tcp-msg-label">SYN</div>
+              <div class="tcp-msg-arrow"></div>
+              <div class="tcp-msg-desc">seq=100</div>
+            </div>
+            <div class="tcp-msg to-left" id="tcpMsg1">
+              <div class="tcp-msg-desc">seq=300, ack=101</div>
+              <div class="tcp-msg-arrow"></div>
+              <div class="tcp-msg-label">SYN+ACK</div>
+              <div class="tcp-msg-desc">第2次</div>
+            </div>
+            <div class="tcp-msg to-right" id="tcpMsg2">
+              <div class="tcp-msg-desc">第3次</div>
+              <div class="tcp-msg-label">ACK</div>
+              <div class="tcp-msg-arrow"></div>
+              <div class="tcp-msg-desc">ack=301</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-narr" id="tcpNarr">👆 点击「下一步」，看客户端和服务器如何通过三次握手建立可靠连接。</div>
+        <div class="step-counter" id="tcpCounter">第 0 / 4 步</div>
+      </div>
+
+      <div class="key-point">
+        <strong>为什么要三次？</strong>两次不够 —— 服务器无法确认客户端收到了自己的回复。
+        三次握手确保<strong>双方都确认对方能收发数据</strong>，才开始传输。
+      </div>
+
+      <!-- ==================== 5. HTTP 请求响应流程 ==================== -->
+      <h2>图解：一次完整的 HTTP 请求</h2>
+      <p>TCP 连接建立后，浏览器就可以发送 HTTP 请求了。点击按钮，看请求和响应的完整内容：</p>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>📨 HTTP 请求/响应动画</h4>
+          <div class="demo-controls">
+            <select id="httpMethodSelect">
+              <option value="GET">GET 请求</option>
+              <option value="POST">POST 请求</option>
+              <option value="DELETE">DELETE 请求</option>
+            </select>
+            <button class="run-btn run-btn-primary" id="httpFlowBtn">▶ 发送请求</button>
+            <button class="run-btn run-btn-orange" id="httpFlowResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="http-flow">
+          <div class="http-flow-endpoints">
+            <div class="http-flow-ep">
+              <div class="http-flow-ep-icon">💻</div>
+              <div class="http-flow-ep-name">浏览器 / Python</div>
+            </div>
+            <div class="http-flow-ep">
+              <div class="http-flow-ep-icon">🖥️</div>
+              <div class="http-flow-ep-name">Django 服务器</div>
+            </div>
+          </div>
+          <div class="http-flow-channel" id="httpFlowChannel">
+            <div class="http-req-box" id="httpReqBox"></div>
+            <div class="http-res-box" id="httpResBox"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 6. HTTP 方法 ==================== -->
+      <h2>HTTP 方法详解</h2>
+      <p>点击每个方法卡片，查看详细说明和代码示例：</p>
+
+      <div class="method-grid" id="methodGrid">
+        <div class="method-card" data-method="GET">
+          <div class="method-name">GET</div>
+          <div class="method-desc">获取资源</div>
+          <div class="method-django">request.GET</div>
+        </div>
+        <div class="method-card" data-method="POST">
+          <div class="method-name">POST</div>
+          <div class="method-desc">创建资源</div>
+          <div class="method-django">request.POST</div>
+        </div>
+        <div class="method-card" data-method="PUT">
+          <div class="method-name">PUT</div>
+          <div class="method-desc">全量更新</div>
+          <div class="method-django">request.data (DRF)</div>
+        </div>
+        <div class="method-card" data-method="PATCH">
+          <div class="method-name">PATCH</div>
+          <div class="method-desc">部分更新</div>
+          <div class="method-django">request.data (DRF)</div>
+        </div>
+        <div class="method-card" data-method="DELETE">
+          <div class="method-name">DELETE</div>
+          <div class="method-desc">删除资源</div>
+          <div class="method-django">删除操作</div>
+        </div>
+      </div>
+      <div class="method-detail-panel" id="methodDetail">
+        <div class="md-title" id="mdTitle"></div>
+        <div class="md-body" id="mdBody"></div>
+        <div class="md-example" id="mdExample"></div>
+      </div>
+
+      <!-- ==================== 7. 状态码探索器 ==================== -->
+      <h2>状态码速查</h2>
+      <p>点击任意状态码，查看详细说明和 Django 中的使用场景：</p>
+
+      <div class="status-explorer" id="statusExplorer">
+        <div class="status-group">
+          <div class="status-group-title"><span class="status-group-badge g2xx">2xx</span> 成功</div>
+          <div class="status-codes-row">
+            <span class="status-code-chip s2xx" data-code="200">200 OK</span>
+            <span class="status-code-chip s2xx" data-code="201">201 Created</span>
+            <span class="status-code-chip s2xx" data-code="204">204 No Content</span>
+          </div>
+        </div>
+        <div class="status-group">
+          <div class="status-group-title"><span class="status-group-badge g3xx">3xx</span> 重定向</div>
+          <div class="status-codes-row">
+            <span class="status-code-chip s3xx" data-code="301">301 永久重定向</span>
+            <span class="status-code-chip s3xx" data-code="302">302 临时重定向</span>
+            <span class="status-code-chip s3xx" data-code="304">304 未修改</span>
+          </div>
+        </div>
+        <div class="status-group">
+          <div class="status-group-title"><span class="status-group-badge g4xx">4xx</span> 客户端错误</div>
+          <div class="status-codes-row">
+            <span class="status-code-chip s4xx" data-code="400">400 Bad Request</span>
+            <span class="status-code-chip s4xx" data-code="401">401 Unauthorized</span>
+            <span class="status-code-chip s4xx" data-code="403">403 Forbidden</span>
+            <span class="status-code-chip s4xx" data-code="404">404 Not Found</span>
+            <span class="status-code-chip s4xx" data-code="405">405 Method Not Allowed</span>
+          </div>
+        </div>
+        <div class="status-group">
+          <div class="status-group-title"><span class="status-group-badge g5xx">5xx</span> 服务器错误</div>
+          <div class="status-codes-row">
+            <span class="status-code-chip s5xx" data-code="500">500 Server Error</span>
+            <span class="status-code-chip s5xx" data-code="502">502 Bad Gateway</span>
+            <span class="status-code-chip s5xx" data-code="503">503 Unavailable</span>
+          </div>
+        </div>
+      </div>
+      <div class="status-detail-panel" id="statusDetail">
+        <div class="sd-code" id="sdCode"></div>
+        <div class="sd-name" id="sdName"></div>
+        <div class="sd-desc" id="sdDesc"></div>
+        <div class="sd-django" id="sdDjango"></div>
+      </div>
+
+      <!-- ==================== 8. Cookie & Session ==================== -->
+      <h2>底层原理：Cookie 与 Session</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🎫 类比：游乐园的手环</div>
+        你买了门票进入游乐园，工作人员给你一个<strong>手环</strong>（Cookie）。<br>
+        之后每次玩项目，只需要出示手环，不需要再买票。游乐园后台有你的<strong>会员记录</strong>（Session），通过手环编号找到你的信息。<br>
+        <strong>Cookie</strong> = 存在浏览器的小标记（手环）；<strong>Session</strong> = 存在服务器的完整数据（会员记录）。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🍪 Cookie & Session 工作流程</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="cookieStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="cookieAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="cookieResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="cookie-scene">
+          <div class="cookie-endpoints">
+            <div class="cookie-ep">
+              <div class="cookie-ep-icon">💻</div>
+              <div class="cookie-ep-name">浏览器</div>
+              <div class="cookie-jar" id="cookieJar">
+                <div class="cookie-jar-title">🍪 Cookie 存储</div>
+                <div id="cookieJarContent"><span style="color:#9ca3af">（空）</span></div>
+              </div>
+            </div>
+            <div class="cookie-channel">
+              <div class="cookie-msg req-msg" id="cookieMsg0"></div>
+              <div class="cookie-msg res-msg" id="cookieMsg1"></div>
+              <div class="cookie-msg req-msg" id="cookieMsg2"></div>
+            </div>
+            <div class="cookie-ep">
+              <div class="cookie-ep-icon">🖥️</div>
+              <div class="cookie-ep-name">Django 服务器</div>
+              <div class="server-session" id="serverSession">
+                <div class="server-session-title">📦 Session 存储</div>
+                <div id="serverSessionContent"><span style="color:#9ca3af">（空）</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-narr" id="cookieNarr">👆 点击「下一步」，看浏览器和服务器如何用 Cookie + Session 记住「你是谁」。</div>
+        <div class="step-counter" id="cookieCounter">第 0 / 5 步</div>
+      </div>
+
+      <div class="key-point">
+        <strong>Django 中使用 Session：</strong><br>
+        <code>request.session['user_id'] = 123</code> — 存数据<br>
+        <code>user_id = request.session.get('user_id')</code> — 读数据<br>
+        Django 自动管理 Cookie ↔ Session 的映射，你只需要操作 <code>request.session</code>。
+      </div>
+
+      <!-- ==================== 9. 代码实战 ==================== -->
+      <h2>代码实战：requests 库</h2>
+
+      <div class="code-label">GET 请求</div>
+      <pre class="code-block"><code>import requests
+
+response = requests.get("https://httpbin.org/get", params={"name": "Alice", "age": 20})
+print(f"状态码: {response.status_code}")
+print(f"Content-Type: {response.headers['Content-Type']}")
+data = response.json()
+print(f"参数: {data['args']}")</code></pre>
+
+      <div class="code-label">POST 请求</div>
+      <pre class="code-block"><code>import requests
+
+# 发送 JSON
+response = requests.post(
+    "https://httpbin.org/post",
+    json={"username": "alice", "email": "alice@example.com"},
+    headers={"Authorization": "Bearer fake-token"}
+)
+data = response.json()
+print(f"发送的数据: {data['json']}")
+print(f"Auth: {data['headers'].get('Authorization')}")
+
+# 发送表单
+response = requests.post(
+    "https://httpbin.org/post",
+    data={"username": "alice", "password": "123456"}
+)
+print(f"表单数据: {response.json()['form']}")</code></pre>
+
+      <div class="code-label">错误处理与超时</div>
+      <pre class="code-block"><code>import requests
+
+# 超时
+try:
+    response = requests.get("https://httpbin.org/delay/5", timeout=3)
+except requests.Timeout:
+    print("请求超时！")
+
+# 状态码检查
+response = requests.get("https://httpbin.org/status/404")
+print(f"状态码: {response.status_code}, 成功? {response.ok}")
+
+try:
+    response.raise_for_status()
+except requests.HTTPError as e:
+    print(f"HTTP 错误: {e}")</code></pre>
+
+      <div class="code-label">Session（保持登录状态）</div>
+      <pre class="code-block"><code>import requests
+
+session = requests.Session()
+session.headers.update({"User-Agent": "MyApp/1.0"})
+
+# 设置 Cookie
+session.get("https://httpbin.org/cookies/set/session_id/abc123")
+
+# 后续请求自动携带
+response = session.get("https://httpbin.org/cookies")
+print(f"Cookies: {response.json()['cookies']}")
+session.close()</code></pre>
+
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 西南科技大学蓝鲸Sass开发课程</p>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ===================== 1. URL 解剖 ===================== */
+    (function urlDemo() {
+      const info = {
+        protocol: {
+          title: '🔒 协议 (Protocol)',
+          desc: '<strong>https://</strong> 表示使用加密的 HTTP 协议。<br><code>http://</code> 不加密，<code>https://</code> 加密（推荐）。<br><br><strong>Django 中：</strong><code>request.scheme</code> 获取协议，<code>request.is_secure()</code> 判断是否 HTTPS。',
+          color: '#f472b6'
+        },
+        domain: {
+          title: '🌐 域名 (Domain)',
+          desc: '服务器的「名字」，由 DNS 解析为 IP 地址。<br><code>api</code> 是子域名，<code>example</code> 是主域名，<code>.com</code> 是顶级域名。<br><br><strong>Django 中：</strong><code>request.get_host()</code> 获取域名。',
+          color: '#60a5fa'
+        },
+        port: {
+          title: '🔌 端口 (Port)',
+          desc: '服务器上的「门牌号」。HTTP 默认 80，HTTPS 默认 443。<br>不写端口时使用默认值。<code>:8080</code> 是开发/测试常用端口。<br><br><strong>Django 开发：</strong><code>python manage.py runserver 8080</code>',
+          color: '#fbbf24'
+        },
+        path: {
+          title: '📁 路径 (Path)',
+          desc: '服务器上的「文件路径」，标识要访问的资源。<br><code>/v1/users</code> 表示 API 的第 1 版，访问用户列表。<br><br><strong>Django 中：</strong>在 <code>urls.py</code> 中定义路由映射。<br><code>path("v1/users", views.user_list)</code>',
+          color: '#34d399'
+        },
+        query: {
+          title: '❓ 查询参数 (Query String)',
+          desc: '以 <code>?</code> 开头，用 <code>&</code> 分隔多个参数。<br>用于传递筛选条件、搜索关键词等。<br><code>name=Alice&age=20</code> → 两个参数。<br><br><strong>Django 中：</strong><code>request.GET.get("name")</code> → <code>"Alice"</code>',
+          color: '#a78bfa'
+        },
+        fragment: {
+          title: '⚓ 锚点 (Fragment)',
+          desc: '以 <code>#</code> 开头，<strong>不会发送到服务器</strong>。<br>仅用于浏览器端定位页面内的位置（如跳转到某个标题）。<br><br><strong>注意：</strong>Django 后端接收不到 fragment，它是纯前端的。',
+          color: '#fb923c'
+        },
+      };
+
+      const panel = document.getElementById('urlInfoPanel');
+      const titleEl = document.getElementById('urlInfoTitle');
+      const descEl = document.getElementById('urlInfoDesc');
+
+      function show(part) {
+        const d = info[part];
+        if (!d) return;
+        titleEl.textContent = d.title;
+        descEl.innerHTML = d.desc;
+        panel.style.borderColor = d.color;
+        document.querySelectorAll('.url-part').forEach(el => el.classList.toggle('active', el.dataset.part === part));
+        document.querySelectorAll('.url-legend-item').forEach(el => el.style.fontWeight = el.dataset.part === part ? '700' : '');
+      }
+
+      document.querySelectorAll('.url-part, .url-legend-item').forEach(el => {
+        el.addEventListener('click', () => show(el.dataset.part));
+      });
+    })();
+
+    /* ===================== 2. DNS 步进器 ===================== */
+    (function dnsDemo() {
+      const steps = [
+        { actors: ['pulse','','','',''], details: ['输入 www.example.com','','','','93.184.216.34'],
+          narr: '💻 你在浏览器地址栏输入 <code>www.example.com</code> 并按下回车。浏览器需要知道这个域名对应的 <strong>IP 地址</strong>。' },
+        { actors: ['','pulse','','',''], details: ['','❌ 没有缓存','','','93.184.216.34'],
+          narr: '📋 <strong>第 1 步：查本地缓存</strong><br>浏览器先检查自己的缓存和系统 hosts 文件。如果之前访问过，直接拿到 IP。这次是第一次访问 → 没找到。' },
+        { actors: ['','','pulse','',''], details: ['','❌ 未命中','查找中...','','93.184.216.34'],
+          narr: '🏢 <strong>第 2 步：问运营商 DNS</strong><br>本地没有，浏览器去问运营商（ISP）的 DNS 服务器，比如电信的 <code>114.114.114.114</code>。运营商 DNS 也没缓存...' },
+        { actors: ['','','','pulse',''], details: ['','','转发查询','查到了！','93.184.216.34'],
+          narr: '🌍 <strong>第 3 步：逐级查询</strong><br>运营商 DNS 向<strong>根域名服务器</strong>询问 → 根说"去问 .com 服务器" → .com 服务器说"去问 example.com 的权威服务器" → 权威服务器返回：<strong>93.184.216.34</strong>！' },
+        { actors: ['','','pulse','',''], details: ['','','✅ 缓存结果','','93.184.216.34'],
+          narr: '📥 <strong>第 4 步：缓存结果</strong><br>运营商 DNS 把 <code>www.example.com → 93.184.216.34</code> 的结果缓存起来（通常缓存几分钟到几小时）。下次其他用户查同样的域名就快了。' },
+        { actors: ['pulse','','','',''], details: ['✅ 拿到 IP!','✅ 已缓存','✅ 已缓存','','93.184.216.34'],
+          narr: '🎉 <strong>完成！</strong>浏览器拿到了 IP 地址 <code>93.184.216.34</code>，同时也缓存在本地。<br>接下来用这个 IP 去建立 TCP 连接！<br><br>💡 <strong>这就是为什么第一次访问网站比较慢</strong>——DNS 查询需要好几步。后续访问有缓存就快了。' },
+      ];
+
+      let current = -1, autoTimer = null;
+      const narrEl = document.getElementById('dnsNarr');
+      const counterEl = document.getElementById('dnsCounter');
+      const stepBtn = document.getElementById('dnsStepBtn');
+      const autoBtn = document.getElementById('dnsAutoBtn');
+      const resetBtn = document.getElementById('dnsResetBtn');
+      const actors = ['dnsClient','dnsLocal','dnsISP','dnsRoot','dnsServer'];
+      const details = ['dnsClientDetail','dnsLocalDetail','dnsISPDetail','dnsRootDetail','dnsServerDetail'];
+
+      function apply(idx) {
+        const s = steps[idx];
+        actors.forEach((id, i) => {
+          const el = document.getElementById(id);
+          el.classList.remove('pulse');
+          if (s.actors[i] === 'pulse') { void el.offsetWidth; el.classList.add('pulse'); }
+        });
+        details.forEach((id, i) => {
+          document.getElementById(id).innerHTML = s.details[i];
+        });
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        actors.forEach(id => document.getElementById(id).classList.remove('pulse'));
+        details.forEach((id, i) => document.getElementById(id).innerHTML = i === 4 ? '93.184.216.34' : '');
+        narrEl.innerHTML = '👆 点击「下一步」，看浏览器是怎么一步步找到服务器 IP 地址的。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 2500);
+      });
+    })();
+
+    /* ===================== 3. TCP 三次握手 ===================== */
+    (function tcpDemo() {
+      const steps = [
+        { msgs: [false, false, false], clientState: 'CLOSED', clientClass: '', serverState: 'LISTEN', serverClass: 'listen',
+          narr: '初始状态：服务器在 <strong>LISTEN</strong> 状态，等待连接。客户端准备发起连接。' },
+        { msgs: [true, false, false], clientState: 'SYN_SENT', clientClass: 'syn-sent', serverState: 'LISTEN', serverClass: 'listen',
+          narr: '🔵 <strong>第 1 次握手：</strong>客户端发送 <strong>SYN</strong>（同步）包，告诉服务器"我想连接你"。<br>包含一个初始序号 seq=100。客户端进入 SYN_SENT 状态。' },
+        { msgs: [true, true, false], clientState: 'SYN_SENT', clientClass: 'syn-sent', serverState: 'SYN_RCVD', serverClass: 'syn-rcvd',
+          narr: '🟣 <strong>第 2 次握手：</strong>服务器收到 SYN，回复 <strong>SYN+ACK</strong>。<br>意思是"我收到了你的请求（ACK），我也想连接你（SYN）"。<br>seq=300, ack=101（对方的 seq+1）。服务器进入 SYN_RCVD 状态。' },
+        { msgs: [true, true, true], clientState: 'ESTABLISHED', clientClass: 'established', serverState: 'ESTABLISHED', serverClass: 'established',
+          narr: '🔵 <strong>第 3 次握手：</strong>客户端发送 <strong>ACK</strong> 确认。<br>ack=301（对方的 seq+1）。双方都进入 <strong>ESTABLISHED</strong> 状态。<br><br>🎉 <strong>连接建立！</strong>现在可以发送 HTTP 数据了。' },
+      ];
+
+      let current = -1, autoTimer = null;
+      const narrEl = document.getElementById('tcpNarr');
+      const counterEl = document.getElementById('tcpCounter');
+      const stepBtn = document.getElementById('tcpStepBtn');
+      const autoBtn = document.getElementById('tcpAutoBtn');
+      const resetBtn = document.getElementById('tcpResetBtn');
+      const clientState = document.getElementById('tcpClientState');
+      const serverState = document.getElementById('tcpServerState');
+      const msgs = [0,1,2].map(i => document.getElementById('tcpMsg' + i));
+
+      function apply(idx) {
+        const s = steps[idx];
+        msgs.forEach((el, i) => el.classList.toggle('visible', s.msgs[i]));
+        clientState.textContent = s.clientState;
+        clientState.className = 'tcp-endpoint-state' + (s.clientClass ? ' ' + s.clientClass : '');
+        serverState.textContent = s.serverState;
+        serverState.className = 'tcp-endpoint-state' + (s.serverClass ? ' ' + s.serverClass : '');
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        msgs.forEach(el => el.classList.remove('visible'));
+        clientState.textContent = 'CLOSED'; clientState.className = 'tcp-endpoint-state';
+        serverState.textContent = 'LISTEN'; serverState.className = 'tcp-endpoint-state listen';
+        narrEl.innerHTML = '👆 点击「下一步」，看客户端和服务器如何通过三次握手建立可靠连接。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 2500);
+      });
+    })();
+
+    /* ===================== 4. HTTP 请求/响应动画 ===================== */
+    (function httpFlowDemo() {
+      const flows = {
+        GET: {
+          req: `<span class="http-req-line">GET /api/users?name=Alice HTTP/1.1</span>\n<span class="http-header-line">Host: api.example.com</span>\n<span class="http-header-line">Accept: application/json</span>\n<span class="http-header-line">User-Agent: python-requests/2.28</span>`,
+          res: `<span class="http-status-line">HTTP/1.1 200 OK</span>\n<span class="http-header-line">Content-Type: application/json</span>\n<span class="http-header-line">Content-Length: 82</span>\n\n<span class="http-body-line">{"id": 1, "name": "Alice", "age": 20}</span>`,
+          resClass: ''
+        },
+        POST: {
+          req: `<span class="http-req-line">POST /api/users HTTP/1.1</span>\n<span class="http-header-line">Host: api.example.com</span>\n<span class="http-header-line">Content-Type: application/json</span>\n<span class="http-header-line">Authorization: Bearer token123</span>\n\n<span class="http-body-line">{"username": "alice", "email": "alice@example.com"}</span>`,
+          res: `<span class="http-status-line">HTTP/1.1 201 Created</span>\n<span class="http-header-line">Content-Type: application/json</span>\n<span class="http-header-line">Location: /api/users/1</span>\n\n<span class="http-body-line">{"id": 1, "username": "alice", "created": true}</span>`,
+          resClass: ''
+        },
+        DELETE: {
+          req: `<span class="http-req-line">DELETE /api/users/1 HTTP/1.1</span>\n<span class="http-header-line">Host: api.example.com</span>\n<span class="http-header-line">Authorization: Bearer token123</span>`,
+          res: `<span class="http-status-line">HTTP/1.1 204 No Content</span>\n<span class="http-header-line">Content-Length: 0</span>`,
+          resClass: ''
+        },
+      };
+
+      const methodSelect = document.getElementById('httpMethodSelect');
+      const flowBtn = document.getElementById('httpFlowBtn');
+      const resetBtn = document.getElementById('httpFlowResetBtn');
+      const reqBox = document.getElementById('httpReqBox');
+      const resBox = document.getElementById('httpResBox');
+
+      async function run() {
+        reqBox.classList.remove('visible'); resBox.classList.remove('visible');
+        reqBox.innerHTML = ''; resBox.innerHTML = '';
+        flowBtn.disabled = true;
+        const method = methodSelect.value;
+        const f = flows[method];
+
+        await new Promise(r => setTimeout(r, 200));
+        reqBox.innerHTML = f.req.replace(/\n/g, '<br>');
+        reqBox.classList.add('visible');
+
+        await new Promise(r => setTimeout(r, 1200));
+        resBox.innerHTML = f.res.replace(/\n/g, '<br>');
+        if (f.resClass) resBox.querySelector('.http-status-line')?.classList.add(f.resClass);
+        resBox.classList.add('visible');
+
+        flowBtn.disabled = false;
+      }
+
+      function reset() {
+        reqBox.classList.remove('visible'); resBox.classList.remove('visible');
+        reqBox.innerHTML = ''; resBox.innerHTML = '';
+        flowBtn.disabled = false;
+      }
+
+      flowBtn.addEventListener('click', run);
+      resetBtn.addEventListener('click', reset);
+    })();
+
+    /* ===================== 5. HTTP 方法详解 ===================== */
+    (function methodDemo() {
+      const data = {
+        GET: {
+          title: 'GET — 获取资源（只读）',
+          body: '最常用的方法。从服务器获取数据，<strong>不会修改</strong>任何东西。<br>参数放在 URL 的查询字符串中（<code>?key=value</code>）。<br>浏览器地址栏输入网址 → 就是 GET 请求。',
+          example: `# Python requests\nresponse = requests.get(\n    "https://api.example.com/users",\n    params={"name": "Alice"}\n)\nusers = response.json()\n\n# Django 视图\ndef user_list(request):\n    name = request.GET.get("name")\n    users = User.objects.filter(name=name)\n    return JsonResponse(list(users), safe=False)`
+        },
+        POST: {
+          title: 'POST — 创建资源',
+          body: '向服务器提交数据，创建新资源。<br>数据放在<strong>请求体</strong>中（而不是 URL），支持 JSON、表单等格式。<br>提交表单、注册、登录通常用 POST。',
+          example: `# Python requests\nresponse = requests.post(\n    "https://api.example.com/users",\n    json={"username": "alice", "email": "a@b.com"}\n)\n\n# Django 视图\ndef create_user(request):\n    data = json.loads(request.body)\n    user = User.objects.create(**data)\n    return JsonResponse({"id": user.id}, status=201)`
+        },
+        PUT: {
+          title: 'PUT — 全量更新',
+          body: '用<strong>完整的新数据</strong>替换服务器上的资源。<br>必须发送资源的<strong>所有字段</strong>，即使只想改一个。<br>类似"重新提交整份文件"。',
+          example: `# Python requests\nresponse = requests.put(\n    "https://api.example.com/users/1",\n    json={"username": "alice", "email": "new@b.com",\n          "age": 21}\n)\n\n# DRF 视图\nclass UserView(APIView):\n    def put(self, request, pk):\n        user = User.objects.get(pk=pk)\n        serializer = UserSerializer(user, data=request.data)\n        serializer.is_valid(raise_exception=True)\n        serializer.save()\n        return Response(serializer.data)`
+        },
+        PATCH: {
+          title: 'PATCH — 部分更新',
+          body: '只更新<strong>部分字段</strong>，其他字段保持不变。<br>比 PUT 更灵活，只发你想改的。<br>类似"在文件上修改几个字"。',
+          example: `# Python requests — 只改邮箱\nresponse = requests.patch(\n    "https://api.example.com/users/1",\n    json={"email": "new@b.com"}\n)\n\n# DRF 视图\nclass UserView(APIView):\n    def patch(self, request, pk):\n        user = User.objects.get(pk=pk)\n        serializer = UserSerializer(\n            user, data=request.data, partial=True\n        )\n        serializer.is_valid(raise_exception=True)\n        serializer.save()\n        return Response(serializer.data)`
+        },
+        DELETE: {
+          title: 'DELETE — 删除资源',
+          body: '删除服务器上的指定资源。<br>通常不需要请求体，通过 URL 中的 ID 指定要删除的对象。<br>成功后通常返回 <code>204 No Content</code>。',
+          example: `# Python requests\nresponse = requests.delete(\n    "https://api.example.com/users/1",\n    headers={"Authorization": "Bearer token123"}\n)\nprint(response.status_code)  # 204\n\n# Django 视图\ndef delete_user(request, pk):\n    user = get_object_or_404(User, pk=pk)\n    user.delete()\n    return HttpResponse(status=204)`
+        },
+      };
+
+      const panel = document.getElementById('methodDetail');
+      const titleEl = document.getElementById('mdTitle');
+      const bodyEl = document.getElementById('mdBody');
+      const exampleEl = document.getElementById('mdExample');
+
+      document.querySelectorAll('.method-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const m = card.dataset.method;
+          const d = data[m];
+          document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          titleEl.textContent = d.title;
+          bodyEl.innerHTML = d.body;
+          exampleEl.textContent = d.example;
+          panel.classList.add('visible');
+        });
+      });
+    })();
+
+    /* ===================== 6. 状态码探索器 ===================== */
+    (function statusDemo() {
+      const codes = {
+        200: { name: 'OK', desc: '请求成功，服务器正常返回数据。最常见的成功状态码。', django: 'return JsonResponse(data) — 默认返回 200' },
+        201: { name: 'Created', desc: '创建成功。通常是 POST 请求创建新资源后返回。', django: 'return JsonResponse(data, status=201)' },
+        204: { name: 'No Content', desc: '成功，但没有返回内容。通常用于 DELETE 成功后。', django: 'return HttpResponse(status=204)' },
+        301: { name: 'Moved Permanently', desc: '资源永久搬家了。浏览器会自动跳转到新地址，搜索引擎也会更新。', django: 'return HttpResponsePermanentRedirect("/new-url")' },
+        302: { name: 'Found (临时重定向)', desc: '资源临时搬家。浏览器跳转，但下次还会访问原地址。', django: 'return redirect("/other-page")' },
+        304: { name: 'Not Modified', desc: '资源没有变化，用浏览器缓存就行。节省带宽。', django: 'Django 缓存中间件自动处理' },
+        400: { name: 'Bad Request', desc: '请求有错误，比如参数格式不对、缺少必填字段。', django: 'return JsonResponse({"error": "无效参数"}, status=400)' },
+        401: { name: 'Unauthorized', desc: '未认证——你没有登录，或者 token 过期了。', django: '@login_required 装饰器 / DRF 认证类' },
+        403: { name: 'Forbidden', desc: '已认证但没权限——你登录了，但不允许访问这个资源。', django: 'return HttpResponseForbidden() / DRF 权限类' },
+        404: { name: 'Not Found', desc: '找不到——请求的资源不存在。最著名的状态码。', django: 'get_object_or_404(User, pk=999)' },
+        405: { name: 'Method Not Allowed', desc: '方法不允许——比如一个只接受 GET 的接口你用了 POST。', django: '@require_GET / DRF 的 http_method_names' },
+        500: { name: 'Internal Server Error', desc: '服务器出 bug 了！后端代码报错时出现。开发时最常见。', django: '代码异常未捕获 → Django 自动返回 500' },
+        502: { name: 'Bad Gateway', desc: '网关错误——反向代理（如 Nginx）无法连接到后端服务。', django: 'Nginx + Gunicorn 部署时后端挂掉' },
+        503: { name: 'Service Unavailable', desc: '服务不可用——服务器过载或在维护中。', django: '服务器过载 / 手动维护模式' },
+      };
+
+      const panel = document.getElementById('statusDetail');
+      const codeEl = document.getElementById('sdCode');
+      const nameEl = document.getElementById('sdName');
+      const descEl = document.getElementById('sdDesc');
+      const djangoEl = document.getElementById('sdDjango');
+
+      document.querySelectorAll('.status-code-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const code = chip.dataset.code;
+          const d = codes[code];
+          document.querySelectorAll('.status-code-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          codeEl.textContent = code;
+          codeEl.style.color = code < 300 ? '#059669' : code < 400 ? '#2563eb' : code < 500 ? '#d97706' : '#dc2626';
+          nameEl.textContent = d.name;
+          descEl.textContent = d.desc;
+          djangoEl.innerHTML = '🐍 <strong>Django：</strong>' + d.django;
+          panel.classList.add('visible');
+        });
+      });
+    })();
+
+    /* ===================== 7. Cookie & Session 步进器 ===================== */
+    (function cookieDemo() {
+      const steps = [
+        { msgs: ['','',''], jar: '<span style="color:#9ca3af">（空）</span>', session: '<span style="color:#9ca3af">（空）</span>',
+          narr: '初始状态：浏览器的 Cookie 是空的，服务器的 Session 也是空的。用户第一次访问网站。' },
+        { msgs: ['→ POST /login {user:"alice", pass:"123"}','',''], jar: '<span style="color:#9ca3af">（空）</span>', session: '<span style="color:#9ca3af">（空）</span>',
+          narr: '🔵 <strong>第 1 步：用户登录</strong><br>浏览器发送 POST 请求，把用户名和密码发给服务器。此时还没有任何 Cookie。' },
+        { msgs: ['','← Set-Cookie: sessionid=abc123',''], jar: '<div class="cookie-item">sessionid=abc123</div>', session: '<div class="session-item">abc123 → {user: "alice", role: "admin"}</div>',
+          narr: '🟢 <strong>第 2 步：服务器创建 Session</strong><br>服务器验证密码正确后：<br>1. 在服务器端创建 <strong>Session</strong>，存储用户信息<br>2. 在响应头中通过 <code>Set-Cookie</code> 把 Session ID 发给浏览器<br>浏览器<strong>自动保存</strong>这个 Cookie。' },
+        { msgs: ['','','→ GET /profile (Cookie: sessionid=abc123)'], jar: '<div class="cookie-item">sessionid=abc123</div>', session: '<div class="session-item">abc123 → {user: "alice", role: "admin"}</div>',
+          narr: '🔵 <strong>第 3 步：后续请求自动携带 Cookie</strong><br>浏览器访问其他页面时，<strong>自动</strong>在请求头中带上 <code>Cookie: sessionid=abc123</code>。<br>不需要你写任何代码，浏览器自动做！' },
+        { msgs: ['','',''], jar: '<div class="cookie-item">sessionid=abc123</div>', session: '<div class="session-item">abc123 → {user: "alice", role: "admin"}</div>',
+          narr: '🟢 <strong>第 4 步：服务器识别用户</strong><br>服务器收到 Cookie 中的 <code>sessionid=abc123</code>，去 Session 存储中查找 → 找到了 alice 的信息！<br><br>🎯 <strong>这就是"保持登录"的原理：</strong><br>Cookie 是"门票号码"（只有 ID），Session 是"会员资料"（完整信息）。<br>Django 中：<code>request.session["user"]</code> 就能拿到数据。' },
+      ];
+
+      let current = -1, autoTimer = null;
+      const narrEl = document.getElementById('cookieNarr');
+      const counterEl = document.getElementById('cookieCounter');
+      const stepBtn = document.getElementById('cookieStepBtn');
+      const autoBtn = document.getElementById('cookieAutoBtn');
+      const resetBtn = document.getElementById('cookieResetBtn');
+      const jarContent = document.getElementById('cookieJarContent');
+      const sessionContent = document.getElementById('serverSessionContent');
+      const msgEls = [0,1,2].map(i => document.getElementById('cookieMsg' + i));
+
+      function apply(idx) {
+        const s = steps[idx];
+        msgEls.forEach((el, i) => {
+          el.textContent = s.msgs[i];
+          el.classList.toggle('visible', !!s.msgs[i]);
+        });
+        jarContent.innerHTML = s.jar;
+        sessionContent.innerHTML = s.session;
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        msgEls.forEach(el => { el.textContent = ''; el.classList.remove('visible'); });
+        jarContent.innerHTML = '<span style="color:#9ca3af">（空）</span>';
+        sessionContent.innerHTML = '<span style="color:#9ca3af">（空）</span>';
+        narrEl.innerHTML = '👆 点击「下一步」，看浏览器和服务器如何用 Cookie + Session 记住「你是谁」。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 3000);
+      });
+    })();
+
+  })();
+  </script>
+</body>
+
+</html>

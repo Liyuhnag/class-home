@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python 异常处理 - 交互演示 | 西南科技大学蓝鲸Sass开发课程</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <style>
+    :root{--gd:#245f4c;--gm:#3d9970;--gb:#4ea980;--gl:#e6f6ed;--gbr:#d0eedc;--gc:#f5fcf8;}
+    .demo-card{background:var(--gc);border:1px solid var(--gbr);border-radius:10px;padding:24px;margin:14px 0 20px;}
+    .demo-header{font-size:1rem;font-weight:600;color:var(--gd);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .run-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;background:linear-gradient(135deg,var(--gb),var(--gm));color:#fff;margin:3px;}
+    .run-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(78,169,128,.35);}
+    .run-btn:disabled{opacity:.5;cursor:not-allowed;}
+    .step-btn{display:inline-flex;align-items:center;padding:6px 14px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;background:var(--gb);color:#fff;}
+    .step-btn:hover:not(:disabled){background:var(--gm);transform:translateY(-1px);}
+    .step-btn:disabled{background:#c8ddd5;cursor:not-allowed;}
+    .stepper-controls{display:flex;gap:10px;margin:14px 0;align-items:center;flex-wrap:wrap;}
+    .step-info{font-weight:600;color:var(--gd);font-size:14px;}
+    .analogy-box{background:#fffbea;border-left:4px solid #f6ad3c;padding:14px 18px;margin:14px 0;border-radius:8px;color:#4a3800;font-size:15px;}
+    .analogy-box strong{display:block;margin-bottom:5px;color:#92560a;}
+    .key-point{background:#edfaf3;border-left:4px solid var(--gb);padding:14px 18px;margin:14px 0;border-radius:8px;font-size:15px;color:#1a3d2f;}
+    .exec-panel{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0;}
+    .exec-code{background:#1e2d27;color:#c6f0da;padding:16px;border-radius:8px;font-family:monospace;font-size:13px;line-height:1.65;overflow-x:auto;}
+    .exec-code .line{padding:2px 4px;border-radius:3px;transition:all .2s;white-space:pre;}
+    .exec-code .line.active{background:rgba(78,169,128,.35);border-left:3px solid var(--gb);padding-left:8px;}
+    .exec-code .line.err{background:rgba(239,68,68,.25);border-left:3px solid #ef4444;padding-left:8px;}
+    .exec-output{background:var(--gc);border:1.5px solid var(--gbr);border-radius:8px;padding:16px;font-size:13px;line-height:1.65;color:var(--gd);min-height:80px;}
+    .log-box{background:#1e2d27;color:#c6f0da;border-radius:8px;padding:14px;font-family:monospace;font-size:13px;min-height:60px;margin-top:12px;line-height:1.6;}
+    .exc-tree{display:flex;flex-direction:column;gap:6px;}
+    .exc-node{padding:8px 16px;border-radius:6px;font-family:monospace;font-size:13px;cursor:pointer;border:1.5px solid var(--gbr);background:#fff;transition:all .2s;}
+    .exc-node:hover{background:var(--gl);border-color:var(--gb);}
+    .exc-node.active{background:var(--gl);border-color:var(--gb);font-weight:600;}
+    .exc-indent-1{margin-left:24px;}
+    .exc-indent-2{margin-left:48px;}
+    .exc-indent-3{margin-left:72px;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:768px){.exec-panel{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+      <nav class="nav-links">
+        <a href="../index.html">首页</a>
+        <a href="../courses/course-02.html">第二节课</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container course-layout">
+    <div class="breadcrumb">
+      <a href="../index.html">首页</a> /
+      <a href="../courses/course-02.html">第二节课</a> /
+      Python 异常处理
+    </div>
+    <article class="panel">
+      <h1>Python 异常处理 &mdash; 交互演示</h1>
+      <blockquote class="tip-block">异常处理是健壮代码的基础。专为有 C 语言基础的同学设计——C 用返回值表示错误，Python 用异常对象传递错误信息。</blockquote>
+
+      <h2>1. try-except-else-finally 步进器</h2>
+      <div class="analogy-box"><strong>💡 类比：C 的错误码 vs Python 的异常</strong>
+        C 用 <code>if (ret < 0) return -1;</code> 逐级传递错误，Python 用 <code>raise</code> 直接跳转到最近的 <code>except</code>，代码更简洁。
+      </div>
+      <div class="demo-card">
+        <div class="demo-header"><span>🔀</span><span>try-except-else-finally 执行流程</span></div>
+        <p style="color:var(--gd);margin-bottom:12px">选择场景，观察各子句的执行顺序</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="runFlow('ok')">✅ 正常执行（无异常）</button>
+          <button class="run-btn" onclick="runFlow('err')" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">❌ 发生异常</button>
+          <button class="run-btn" onclick="document.getElementById('flowLog').innerHTML=''" style="background:#95a5a6">清空</button>
+        </div>
+        <div id="flowLog" class="log-box">点击按钮查看执行流程…</div>
+      </div>
+
+      <table class="compare-table">
+        <thead><tr><th>子句</th><th>作用</th><th>是否必须</th></tr></thead>
+        <tbody>
+          <tr><td><code>try</code></td><td>包裹可能出错的代码</td><td>✅ 必须</td></tr>
+          <tr><td><code>except</code></td><td>捕获并处理异常</td><td>✅ 至少一个</td></tr>
+          <tr><td><code>else</code></td><td>无异常时执行</td><td>❌ 可选</td></tr>
+          <tr><td><code>finally</code></td><td>始终执行（清理资源）</td><td>❌ 可选</td></tr>
+        </tbody>
+      </table>
+
+      <h2>2. 常见异常类型</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>🌳</span><span>异常继承树（点击查看触发示例）</span></div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;">
+          <div class="exc-tree" style="flex:1;min-width:220px;">
+            <div class="exc-node" onclick="showExc('BaseException')">BaseException</div>
+            <div class="exc-node exc-indent-1" onclick="showExc('Exception')">Exception</div>
+            <div class="exc-node exc-indent-2" onclick="showExc('ValueError')">ValueError</div>
+            <div class="exc-node exc-indent-2" onclick="showExc('TypeError')">TypeError</div>
+            <div class="exc-node exc-indent-2" onclick="showExc('IndexError')">IndexError</div>
+            <div class="exc-node exc-indent-2" onclick="showExc('KeyError')">KeyError</div>
+            <div class="exc-node exc-indent-2" onclick="showExc('ZeroDivisionError')">ZeroDivisionError</div>
+            <div class="exc-node exc-indent-2" onclick="showExc('FileNotFoundError')">FileNotFoundError</div>
+            <div class="exc-node exc-indent-2" onclick="showExc('AttributeError')">AttributeError</div>
+          </div>
+          <div id="excDetail" style="flex:2;min-width:240px;background:var(--gl);border:1.5px solid var(--gbr);border-radius:8px;padding:16px;font-size:14px;">
+            点击左侧异常名查看触发示例
+          </div>
+        </div>
+      </div>
+
+      <h2>3. raise 与自定义异常</h2>
+      <div class="demo-card">
+        <div class="demo-header"><span>🏦</span><span>InsufficientFundsError 自定义异常演示</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="run-btn" onclick="runWithdraw(500)">取款 500（成功）</button>
+          <button class="run-btn" onclick="runWithdraw(1500)" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">取款 1500（余额不足）</button>
+          <button class="run-btn" onclick="runWithdraw(-50)" style="background:linear-gradient(135deg,#e67e22,#d35400)">取款 -50（非法金额）</button>
+          <button class="run-btn" onclick="document.getElementById('raiseLog').innerHTML=''" style="background:#95a5a6">清空</button>
+        </div>
+        <div id="raiseLog" class="log-box">点击按钮测试异常抛出…</div>
+      </div>
+
+      <h2>4. 最佳实践</h2>
+      <table class="compare-table">
+        <thead><tr><th>原则</th><th>说明</th><th>反例</th></tr></thead>
+        <tbody>
+          <tr><td>精确捕获</td><td>捕获具体异常类型</td><td><code>except:</code> 一把抓</td></tr>
+          <tr><td>最小 try 范围</td><td>只包裹可能出错的代码</td><td>整个函数放 try 里</td></tr>
+          <tr><td>不要静默吞掉</td><td>至少 log 记录</td><td><code>except: pass</code></td></tr>
+          <tr><td>EAFP 优于 LBYL</td><td>先做再说（try）优于先检查再做（if）</td><td><code>if key in d: d[key]</code></td></tr>
+        </tbody>
+      </table>
+
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="container"><p>西南科技大学蓝鲸Sass开发课程 &copy; 2025</p></div>
+  </footer>
+
+  <script>
+  // ==================== Flow demo ====================
+  function runFlow(mode){
+    const log = document.getElementById('flowLog');
+    const steps = mode === 'ok' ? [
+      {color:'#68d391', text:'▶ 进入 try 块'},
+      {color:'#68d391', text:'  result = 10 / 2  → 5.0 ✓'},
+      {color:'#ffd700', text:'▶ 无异常，执行 else 块'},
+      {color:'#68d391', text:'  else: print("计算成功:", result)  → 计算成功: 5.0'},
+      {color:'#a0aec0', text:'▶ 执行 finally 块（无论如何都执行）'},
+      {color:'#a0aec0', text:'  finally: print("[清理完毕]")  → [清理完毕]'},
+    ] : [
+      {color:'#68d391', text:'▶ 进入 try 块'},
+      {color:'#fc8181', text:'  result = 10 / 0  → ZeroDivisionError!'},
+      {color:'#fc8181', text:'▶ 异常抛出，跳转到 except'},
+      {color:'#f6ad3c', text:'  except ZeroDivisionError: print("除数不能为0")  → 除数不能为0'},
+      {color:'#a0aec0', text:'▶ else 块跳过（有异常）'},
+      {color:'#a0aec0', text:'▶ 执行 finally 块（无论如何都执行）'},
+      {color:'#a0aec0', text:'  finally: print("[清理完毕]")  → [清理完毕]'},
+    ];
+    log.innerHTML = '';
+    steps.forEach((s, i) => setTimeout(() => {
+      log.innerHTML += `<div style="animation:fadeIn .3s;color:${s.color}">${s.text}</div>`;
+    }, i * 350));
+  }
+
+  // ==================== Exception tree ====================
+  const excData = {
+    BaseException: {trigger:'KeyboardInterrupt, SystemExit 等', example:'# 不要捕获 BaseException\n# 除非你知道自己在做什么', note:'所有异常的根类，包括系统退出信号'},
+    Exception: {trigger:'大多数程序异常', example:'try:\n    ...\nexcept Exception as e:\n    print(f"捕获到: {e}")', note:'业务代码中通常捕获 Exception 的子类'},
+    ValueError: {trigger:'int("abc"), [1,2,3].index(9)', example:'try:\n    x = int("abc")\nexcept ValueError as e:\n    print(f"值不合法: {e}")', note:'值不在有效范围内'},
+    TypeError: {trigger:"'a' + 1, len(42)", example:'try:\n    r = "a" + 1\nexcept TypeError as e:\n    print(f"类型错误: {e}")', note:'操作数类型不匹配'},
+    IndexError: {trigger:'[1,2,3][5]', example:'try:\n    x = [1,2,3][5]\nexcept IndexError as e:\n    print(f"越界: {e}")', note:'列表/字符串索引超出范围'},
+    KeyError: {trigger:"d = {}; d['key']", example:"try:\n    d = {'a':1}\n    x = d['b']\nexcept KeyError as e:\n    print(f'键不存在: {e}')", note:'字典中键不存在'},
+    ZeroDivisionError: {trigger:'1/0, 1%0', example:'try:\n    r = 1 / 0\nexcept ZeroDivisionError:\n    print("除数不能为0")', note:'除法或取模运算除数为零'},
+    FileNotFoundError: {trigger:"open('no_such_file.txt')", example:"try:\n    f = open('missing.txt')\nexcept FileNotFoundError as e:\n    print(f'文件不存在: {e}')", note:'IOError的子类，文件或目录不存在'},
+    AttributeError: {trigger:'None.strip(), obj.no_attr', example:'try:\n    x = None\n    x.strip()\nexcept AttributeError as e:\n    print(f"属性不存在: {e}")', note:'对象没有该属性或方法'},
+  };
+  function showExc(name){
+    document.querySelectorAll('.exc-node').forEach(n=>n.classList.remove('active'));
+    event.target.classList.add('active');
+    const d = excData[name];
+    document.getElementById('excDetail').innerHTML = `
+      <strong style="color:var(--gd);font-size:1rem">${name}</strong>
+      <p style="color:#555;margin:6px 0 12px">${d.note}</p>
+      <div style="background:#1e2d27;color:#c6f0da;border-radius:6px;padding:12px;font-family:monospace;font-size:12px;line-height:1.7;white-space:pre">${d.example}</div>
+      <p style="color:#888;font-size:12px;margin-top:8px">触发方式：<code>${d.trigger}</code></p>
+    `;
+  }
+
+  // ==================== Raise / Custom exception ====================
+  let balance = 1000;
+  function runWithdraw(amount){
+    const log = document.getElementById('raiseLog');
+    try {
+      if(amount <= 0) throw {name:'ValueError', message:`取款金额必须大于 0，收到: ${amount}`};
+      if(amount > balance) throw {name:'InsufficientFundsError', message:`余额不足: 当前余额 ${balance}，尝试取款 ${amount}，差额 ${amount-balance}`};
+      balance -= amount;
+      log.innerHTML += `<div style="animation:fadeIn .3s;color:#68d391">✅ 取款成功 -${amount}，新余额: ${balance}</div>`;
+    } catch(e) {
+      log.innerHTML += `<div style="animation:fadeIn .3s;color:#fc8181">❌ ${e.name}: ${e.message}</div>`;
+    }
+  }
+  </script>
+</body>
+</html>

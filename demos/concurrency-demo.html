@@ -1,0 +1,2830 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>并发编程演示 | 西南科技大学蓝鲸Sass开发课程</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <style>
+    /* ===== 通用交互组件（与 async-demo 一致） ===== */
+    .demo-card {
+      background: #f5fcf8;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin: 12px 0 20px;
+    }
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .demo-header h4 {
+      margin: 0 !important;
+      padding-left: 0 !important;
+      font-size: 16px;
+      font-weight: 600;
+      color: #245f4c;
+    }
+    .demo-header h4::before { display: none !important; }
+    .demo-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .run-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-family: inherit;
+    }
+    .run-btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+    }
+    .run-btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+    .run-btn-green {
+      background: linear-gradient(135deg, #4ea980, #3d9970);
+      color: #fff;
+    }
+    .run-btn-green:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(78, 169, 128, 0.35);
+    }
+    .run-btn-orange {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+    }
+    .run-btn-orange:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+    .run-btn-purple {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: #fff;
+    }
+    .run-btn-purple:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+    }
+    .run-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ===== 进度条系统 ===== */
+    .timeline-area { position: relative; }
+    .timeline-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .timeline-label {
+      flex-shrink: 0;
+      width: 60px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #245f4c;
+      text-align: right;
+    }
+    .timeline-track {
+      flex: 1;
+      height: 36px;
+      background: #e6f6ed;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #d0eedc;
+    }
+    .timeline-bar {
+      position: absolute;
+      top: 3px;
+      bottom: 3px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      transition: none;
+      opacity: 0;
+    }
+    .timeline-bar.bar-a { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .timeline-bar.bar-b { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .timeline-bar.bar-c { background: linear-gradient(135deg, #ec4899, #db2777); }
+    .timeline-bar.bar-d { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .timeline-bar.running { opacity: 1; animation: barPulse 0.8s ease-in-out infinite; }
+    .timeline-bar.done { opacity: 1; animation: none; filter: brightness(0.9); }
+    @keyframes barPulse {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.15); }
+    }
+
+    /* ===== 计时器 & 日志 ===== */
+    .timer-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: 8px;
+    }
+    .timer-icon { font-size: 18px; }
+    .timer-text { font-size: 14px; color: var(--text-sub); }
+    .timer-value {
+      font-weight: 700;
+      font-family: 'Consolas', 'Monaco', monospace;
+      color: #245f4c;
+      font-size: 16px;
+    }
+    .timer-status {
+      margin-left: auto;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .timer-status.waiting { background: #f3f4f6; color: #6b7280; }
+    .timer-status.running { background: #fef3c7; color: #92400e; }
+    .timer-status.finished { background: #d1fae5; color: #065f46; }
+    .log-box {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #1a2332;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #a0d8b8;
+      max-height: 200px;
+      overflow-y: auto;
+      min-height: 60px;
+    }
+    .log-box .log-line {
+      opacity: 0;
+      transform: translateY(4px);
+      animation: logAppear 0.3s ease forwards;
+    }
+    @keyframes logAppear { to { opacity: 1; transform: translateY(0); } }
+    .log-time { color: #6b8f7b; }
+    .log-event { color: #fbbf24; }
+    .log-done { color: #34d399; }
+    .log-info { color: #93c5fd; }
+
+    /* ===== 文字块 ===== */
+    .analogy-box {
+      margin: 16px 0;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1px solid #fde68a;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.85;
+      color: #78350f;
+    }
+    .analogy-box .analogy-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .key-point {
+      margin: 12px 0;
+      padding: 14px 18px;
+      background: #eef9f3;
+      border-left: 4px solid #4ea980;
+      border-radius: 0 10px 10px 0;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #245f4c;
+    }
+    .key-point strong { color: #1f6b4f; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #23916b;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    .back-link:hover { color: #1f6b4f; }
+
+    /* ===== 左右对比 ===== */
+    .vs-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 16px 0;
+    }
+    @media (max-width: 768px) { .vs-split { grid-template-columns: 1fr; } }
+    .vs-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .vs-badge-seq { background: #fef3c7; color: #92400e; }
+    .vs-badge-thread { background: #dbeafe; color: #1e40af; }
+    .vs-badge-process { background: #ede9fe; color: #5b21b6; }
+    .vs-badge-async { background: #d1fae5; color: #065f46; }
+
+    /* ===== 概念卡 ===== */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .concept-card {
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: 10px;
+      padding: 16px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .concept-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(125, 201, 168, 0.15);
+    }
+    .concept-card .concept-icon { font-size: 28px; margin-bottom: 8px; }
+    .concept-card .concept-name { font-weight: 600; color: #245f4c; font-size: 15px; margin-bottom: 6px; }
+    .concept-card .concept-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+    .concept-card .concept-analogy {
+      font-size: 12px;
+      color: #4ea980;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed #d9efdf;
+      line-height: 1.5;
+    }
+
+    /* ===== 1. 餐厅厨房动画 ===== */
+    .kitchen-scene {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0;
+    }
+    @media (max-width: 768px) { .kitchen-scene { grid-template-columns: 1fr; } }
+    .kitchen-box {
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 18px;
+      text-align: center;
+    }
+    .kitchen-box h4 {
+      margin: 0 0 6px !important;
+      padding: 0 !important;
+      font-size: 14px;
+    }
+    .kitchen-box h4::before { display: none !important; }
+    .kitchen-box .kitchen-subtitle {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+    .chef-area {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 12px 0;
+      min-height: 100px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .chef-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .chef-icon {
+      font-size: 32px;
+      transition: all 0.3s;
+    }
+    .chef-icon.idle { filter: grayscale(0.6); opacity: 0.5; }
+    .chef-icon.working { animation: chefBounce 0.5s ease-in-out infinite alternate; }
+    @keyframes chefBounce { to { transform: translateY(-3px); } }
+    .chef-icon.done { filter: none; opacity: 1; }
+    .chef-dish {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+      min-height: 16px;
+    }
+    .chef-dish.active { color: #059669; }
+    .kitchen-timer-val {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 22px;
+      font-weight: 700;
+      color: #245f4c;
+      margin-top: 8px;
+    }
+    .kitchen-status-text {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 4px;
+      min-height: 20px;
+    }
+    .order-queue {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin: 8px 0;
+      min-height: 28px;
+    }
+    .order-item {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid #d0eedc;
+      background: #f0fdf4;
+      color: #245f4c;
+      transition: all 0.3s;
+    }
+    .order-item.processing { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+    .order-item.completed { background: #d1fae5; border-color: #86efac; color: #065f46; }
+
+    /* ===== 2. 并发 vs 并行 动态图 ===== */
+    .cvp-container {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .cvp-section { margin-bottom: 20px; }
+    .cvp-section:last-child { margin-bottom: 0; }
+    .cvp-section-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cvp-core-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .cvp-core-label {
+      flex-shrink: 0;
+      width: 60px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: right;
+      color: var(--text-sub);
+    }
+    .cvp-core-track {
+      flex: 1;
+      height: 28px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+    .cvp-seg {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .cvp-seg.visible { opacity: 1; }
+    .cvp-seg.task-a { background: #3b82f6; }
+    .cvp-seg.task-b { background: #8b5cf6; }
+    .cvp-seg.task-c { background: #ec4899; }
+    .cvp-seg.task-idle { background: #d1d5db; }
+    .cvp-time-axis {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #9ca3af;
+      padding: 0 0 0 68px;
+      margin-top: 2px;
+    }
+    .cvp-result-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .cvp-result-seq { background: #fef3c7; color: #92400e; }
+    .cvp-result-conc { background: #dbeafe; color: #1e40af; }
+    .cvp-result-par { background: #ede9fe; color: #5b21b6; }
+
+    /* ===== 3. GIL 步进器 ===== */
+    .gil-stepper {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .gil-scene {
+      display: flex;
+      gap: 16px;
+      margin: 12px 0;
+      align-items: stretch;
+    }
+    @media (max-width: 640px) { .gil-scene { flex-direction: column; } }
+    .gil-lock-box {
+      flex-shrink: 0;
+      width: 120px;
+      text-align: center;
+      padding: 14px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .gil-lock-box.locked-a { border-color: #3b82f6; background: #eff6ff; }
+    .gil-lock-box.locked-b { border-color: #8b5cf6; background: #f5f3ff; }
+    .gil-lock-box.locked-c { border-color: #ec4899; background: #fdf2f8; }
+    .gil-lock-box.unlocked { border-color: #86efac; background: #f0fdf4; }
+    .gil-lock-icon { font-size: 32px; transition: transform 0.3s; }
+    .gil-lock-box.unlocked .gil-lock-icon { transform: rotate(-15deg); }
+    .gil-lock-owner {
+      font-size: 13px;
+      font-weight: 700;
+      transition: color 0.3s;
+    }
+    .gil-lock-box.locked-a .gil-lock-owner { color: #2563eb; }
+    .gil-lock-box.locked-b .gil-lock-owner { color: #7c3aed; }
+    .gil-lock-box.locked-c .gil-lock-owner { color: #db2777; }
+    .gil-lock-box.unlocked .gil-lock-owner { color: #16a34a; }
+    .gil-threads {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .gil-thread {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+    .gil-thread.has-lock { border-color: #3b82f6; background: #eff6ff; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+    .gil-thread.has-lock-b { border-color: #8b5cf6; background: #f5f3ff; box-shadow: 0 0 0 2px rgba(139,92,246,0.15); }
+    .gil-thread.has-lock-c { border-color: #ec4899; background: #fdf2f8; box-shadow: 0 0 0 2px rgba(236,72,153,0.15); }
+    .gil-thread.waiting { border-color: #fca5a5; background: #fff5f5; border-style: dashed; }
+    .gil-thread.io-wait { border-color: #bfdbfe; background: #f0f9ff; border-style: dashed; }
+    .gil-thread.done { border-color: #86efac; background: #f0fdf4; }
+    .gil-thread-name {
+      font-weight: 700;
+      min-width: 50px;
+    }
+    .gil-thread-status {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    .gil-thread.has-lock .gil-thread-status,
+    .gil-thread.has-lock-b .gil-thread-status,
+    .gil-thread.has-lock-c .gil-thread-status { background: #dbeafe; color: #1e40af; }
+    .gil-thread.waiting .gil-thread-status { background: #fee2e2; color: #991b1b; }
+    .gil-thread.io-wait .gil-thread-status { background: #e0f2fe; color: #0369a1; }
+    .gil-thread.done .gil-thread-status { background: #dcfce7; color: #166534; }
+    .gil-narr {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-main);
+      min-height: 44px;
+    }
+    .gil-counter {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 8px;
+    }
+
+    /* ===== 4. 线程 vs 进程对比 ===== */
+    .tp-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 16px 0;
+    }
+    @media (max-width: 768px) { .tp-compare { grid-template-columns: 1fr; } }
+    .tp-box {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 2px solid;
+    }
+    .tp-box.thread-box { border-color: #93c5fd; background: #eff6ff; }
+    .tp-box.process-box { border-color: #c4b5fd; background: #f5f3ff; }
+    .tp-box h4 {
+      margin: 0 0 10px !important;
+      padding: 0 !important;
+      font-size: 15px;
+    }
+    .tp-box h4::before { display: none !important; }
+    .tp-workers {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+    .tp-worker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(0,0,0,0.06);
+      min-width: 70px;
+      transition: all 0.3s;
+    }
+    .tp-worker-icon { font-size: 22px; }
+    .tp-worker-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+    .tp-worker-bar {
+      width: 100%;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .tp-worker-fill {
+      height: 100%;
+      border-radius: 3px;
+      width: 0;
+      transition: width 0.1s linear;
+    }
+    .tp-box.thread-box .tp-worker-fill { background: #3b82f6; }
+    .tp-box.process-box .tp-worker-fill { background: #8b5cf6; }
+    .tp-worker.active { border-color: #60a5fa; background: #fff; }
+    .tp-worker.done .tp-worker-fill { width: 100% !important; }
+    .tp-memory-label {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 10px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 6px;
+      text-align: center;
+    }
+    .tp-timer-val {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .tp-box.thread-box .tp-timer-val { color: #2563eb; }
+    .tp-box.process-box .tp-timer-val { color: #7c3aed; }
+
+    /* ===== 5. 线程池可视化 ===== */
+    .pool-vis {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .pool-scene {
+      display: flex;
+      gap: 20px;
+      margin: 12px 0;
+      align-items: flex-start;
+    }
+    @media (max-width: 640px) { .pool-scene { flex-direction: column; } }
+    .pool-queue-col {
+      flex-shrink: 0;
+      width: 140px;
+    }
+    .pool-queue-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .pool-queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 60px;
+    }
+    .pool-queue-item {
+      padding: 6px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .pool-queue-item.picked { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+    .pool-queue-item.gone {
+      opacity: 0;
+      transform: translateX(20px);
+      max-height: 0;
+      padding: 0;
+      margin: 0;
+      border: none;
+      overflow: hidden;
+    }
+    .pool-workers-col { flex: 1; }
+    .pool-workers-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .pool-workers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 480px) { .pool-workers-grid { grid-template-columns: 1fr; } }
+    .pool-worker-card {
+      padding: 12px;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      text-align: center;
+      transition: all 0.3s;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .pool-worker-card.busy { border-color: #60a5fa; background: #eff6ff; }
+    .pool-worker-card.idle-state { border-color: #d1d5db; background: #f9fafb; }
+    .pool-worker-icon { font-size: 24px; }
+    .pool-worker-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #245f4c;
+    }
+    .pool-worker-task {
+      font-size: 11px;
+      color: var(--text-sub);
+      min-height: 16px;
+    }
+    .pool-worker-bar {
+      width: 80%;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .pool-worker-fill {
+      height: 100%;
+      border-radius: 3px;
+      width: 0;
+      background: #3b82f6;
+      transition: width 0.1s linear;
+    }
+    .pool-done-col {
+      flex-shrink: 0;
+      width: 140px;
+    }
+    .pool-done-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .pool-done-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 60px;
+    }
+    .pool-done-item {
+      padding: 6px 10px;
+      background: #d1fae5;
+      border: 1px solid #86efac;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      color: #065f46;
+      animation: logAppear 0.3s ease forwards;
+    }
+
+    /* ===== 6. 选择指南 ===== */
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .guide-card {
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: 10px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .guide-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(125, 201, 168, 0.15);
+    }
+    .guide-card .guide-icon { font-size: 28px; margin-bottom: 8px; }
+    .guide-card .guide-title { font-weight: 600; color: #245f4c; font-size: 15px; margin-bottom: 4px; }
+    .guide-card .guide-scenario { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+    .guide-card .guide-tool {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .guide-tool.tool-thread { background: #dbeafe; color: #1e40af; }
+    .guide-tool.tool-process { background: #ede9fe; color: #5b21b6; }
+    .guide-tool.tool-async { background: #d1fae5; color: #065f46; }
+
+    /* ===== 速度选择器 ===== */
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .speed-control select {
+      padding: 4px 8px;
+      border: 1px solid #d0eedc;
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    /* ===== 内存模型可视化 ===== */
+    .mem-scene {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin: 16px 0;
+    }
+    @media (max-width: 768px) { .mem-scene { grid-template-columns: 1fr; } }
+    .mem-panel {
+      background: #fff;
+      border: 2px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 18px;
+    }
+    .mem-panel h4 {
+      margin: 0 0 12px !important;
+      padding: 0 !important;
+      font-size: 15px;
+      text-align: center;
+    }
+    .mem-panel h4::before { display: none !important; }
+    .mem-process-wrap {
+      display: flex;
+      gap: 12px;
+    }
+    .mem-process-box {
+      flex: 1;
+      border: 2px dashed #c4b5fd;
+      border-radius: 8px;
+      padding: 10px;
+      background: #faf5ff;
+      text-align: center;
+    }
+    .mem-process-box .mem-box-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #7c3aed;
+      margin-bottom: 6px;
+    }
+    .mem-thread-container {
+      border: 2px solid #93c5fd;
+      border-radius: 8px;
+      padding: 10px;
+      background: #eff6ff;
+    }
+    .mem-shared-zone {
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .mem-shared-zone .mem-box-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #2563eb;
+      margin-bottom: 6px;
+    }
+    .mem-thread-stacks {
+      display: flex;
+      gap: 8px;
+    }
+    .mem-stack-box {
+      flex: 1;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 8px;
+      background: #f0f7ff;
+      text-align: center;
+    }
+    .mem-stack-box .mem-box-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #3b82f6;
+      margin-bottom: 4px;
+    }
+    .mem-var {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Consolas', 'Monaco', monospace;
+      margin: 2px;
+      transition: all 0.3s;
+    }
+    .mem-var.global-var {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+    .mem-var.local-var {
+      background: #e0f2fe;
+      border: 1px solid #7dd3fc;
+      color: #0369a1;
+    }
+    .mem-var.highlight {
+      transform: scale(1.1);
+      box-shadow: 0 0 0 2px #f59e0b;
+    }
+    .mem-var .mem-val {
+      font-weight: 800;
+      transition: color 0.3s;
+    }
+    .mem-var .mem-val.changed { color: #dc2626; }
+    .mem-narr {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.7;
+      min-height: 40px;
+    }
+
+    /* ===== 上下文切换动画 ===== */
+    .ctx-scene {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .ctx-cpu {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .ctx-cpu-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    .ctx-cpu-chip .ctx-running-label {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.15);
+      transition: all 0.3s;
+    }
+    .ctx-cpu-chip.running-a { box-shadow: 0 0 20px rgba(59,130,246,0.4); }
+    .ctx-cpu-chip.running-b { box-shadow: 0 0 20px rgba(139,92,246,0.4); }
+    .ctx-cpu-chip.switching { box-shadow: 0 0 20px rgba(245,158,11,0.5); animation: ctxPulse 0.4s ease-in-out; }
+    @keyframes ctxPulse { 50% { transform: scale(1.03); } }
+    .ctx-threads-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: center;
+      margin: 16px 0;
+    }
+    @media (max-width: 640px) { .ctx-threads-row { grid-template-columns: 1fr; } }
+    .ctx-thread-box {
+      padding: 14px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .ctx-thread-box.active-a { border-color: #3b82f6; background: #eff6ff; }
+    .ctx-thread-box.active-b { border-color: #8b5cf6; background: #f5f3ff; }
+    .ctx-thread-box.paused { border-color: #fbbf24; background: #fffbeb; border-style: dashed; }
+    .ctx-thread-box .ctx-thread-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .ctx-thread-box .ctx-thread-state {
+      font-size: 12px;
+      color: var(--text-sub);
+      min-height: 18px;
+    }
+    .ctx-registers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .ctx-reg {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Consolas', 'Monaco', monospace;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s;
+    }
+    .ctx-reg.saved { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+    .ctx-reg.loaded { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+    .ctx-switch-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      min-width: 80px;
+    }
+    .ctx-switch-arrow .ctx-arrow-icon {
+      font-size: 28px;
+      transition: all 0.3s;
+    }
+    .ctx-switch-arrow.active { color: #f59e0b; }
+    .ctx-switch-arrow.active .ctx-arrow-icon { animation: ctxArrowBounce 0.5s ease-in-out infinite alternate; }
+    @keyframes ctxArrowBounce { to { transform: scale(1.15); } }
+    .ctx-cost-bar {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .ctx-cost-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      flex-shrink: 0;
+    }
+    .ctx-cost-track {
+      flex: 1;
+      height: 24px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .ctx-cost-fill {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      transition: width 0.3s;
+      width: 0;
+    }
+    .ctx-cost-fill.thread-cost { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+    .ctx-cost-fill.process-cost { background: linear-gradient(90deg, #a78bfa, #7c3aed); }
+
+    /* ===== 竞态条件演示 ===== */
+    .race-scene {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #d9efdf;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .race-counter-display {
+      text-align: center;
+      margin: 16px 0;
+    }
+    .race-counter-val {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 48px;
+      font-weight: 800;
+      transition: color 0.3s;
+      color: #245f4c;
+    }
+    .race-counter-val.danger { color: #dc2626; }
+    .race-counter-val.success { color: #16a34a; }
+    .race-counter-label {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+    .race-expected {
+      font-size: 13px;
+      color: var(--text-sub);
+      text-align: center;
+    }
+    .race-expected strong {
+      color: #245f4c;
+    }
+    .race-threads-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      align-items: stretch;
+      margin: 16px 0;
+    }
+    @media (max-width: 640px) { .race-threads-row { grid-template-columns: 1fr; } }
+    .race-thread-panel {
+      padding: 14px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      transition: all 0.3s;
+    }
+    .race-thread-panel.active-a { border-color: #3b82f6; background: #eff6ff; }
+    .race-thread-panel.active-b { border-color: #8b5cf6; background: #f5f3ff; }
+    .race-thread-panel .race-t-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .race-step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .race-step {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .race-step .step-marker {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .race-step.current-a { background: #eff6ff; border-color: #93c5fd; }
+    .race-step.current-a .step-marker { background: #3b82f6; }
+    .race-step.current-b { background: #f5f3ff; border-color: #c4b5fd; }
+    .race-step.current-b .step-marker { background: #8b5cf6; }
+    .race-step.executed { background: #f0fdf4; border-color: #86efac; }
+    .race-step.executed .step-marker { background: #22c55e; }
+    .race-step.conflict { background: #fef2f2; border-color: #fca5a5; }
+    .race-step.conflict .step-marker { background: #dc2626; }
+    .race-vs-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: #d1d5db;
+    }
+    .race-narr {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.7;
+      min-height: 44px;
+    }
+    .race-counter-mini {
+      text-align: center;
+      margin-top: 8px;
+    }
+    .race-counter-mini .mini-label {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+    .race-counter-mini .mini-val {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 24px;
+      font-weight: 800;
+      color: #245f4c;
+      transition: color 0.3s;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">西南科技大学蓝鲸Sass开发课程</div>
+      <nav class="nav-links">
+        <a href="../index.html">首页</a>
+        <a href="../courses/course-02.html" data-nav>第二节课</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container course-layout">
+    <a href="../courses/course-02.html" class="back-link">← 返回第二节课</a>
+
+    <article class="panel">
+      <h1>并发编程</h1>
+      <p>上一节我们学了「异步」—— 一个人巧妙安排时间。这一节我们来学<strong>「并发」和「并行」</strong>—— 多个人一起干活。同样用<strong>生活例子</strong>和<strong>可交互动画</strong>帮你理解。</p>
+
+      <!-- ==================== 1. 生活类比：餐厅厨房 ==================== -->
+      <h2>先看一个生活中的例子</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🍳 场景：餐厅厨房要做三道菜</div>
+        <strong>顺序</strong> = 一个厨师做完一道再做下一道<br>
+        <strong>并发</strong> = 一个厨师「交替」做三道菜（炒一下这个，等它煮的时候去切那个）<br>
+        <strong>并行</strong> = 三个厨师<strong>同时</strong>各做一道菜<br>
+        点击下面的按钮，观看三种方式的时间差异！
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🍳 厨房做菜演示</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-orange" id="kitchenSeqBtn">🐢 顺序做</button>
+            <button class="run-btn run-btn-primary" id="kitchenConcBtn">🔄 并发做</button>
+            <button class="run-btn run-btn-purple" id="kitchenParBtn">🚀 并行做</button>
+          </div>
+        </div>
+
+        <div class="kitchen-scene" id="kitchenScene">
+          <!-- 顺序 -->
+          <div class="kitchen-box">
+            <h4>🐢 顺序执行</h4>
+            <p class="kitchen-subtitle">1 个厨师，一道一道做</p>
+            <div class="chef-area" id="seqChefs">
+              <div class="chef-unit">
+                <div class="chef-icon idle" id="seqChef0">👨‍🍳</div>
+                <div class="chef-dish" id="seqDish0">空闲</div>
+              </div>
+            </div>
+            <div class="order-queue" id="seqQueue"></div>
+            <div class="kitchen-timer-val" id="seqTimer">0.0s</div>
+            <div class="kitchen-status-text" id="seqStatus">等待开始</div>
+          </div>
+          <!-- 并发 -->
+          <div class="kitchen-box">
+            <h4>🔄 并发执行</h4>
+            <p class="kitchen-subtitle">1 个厨师，交替切换</p>
+            <div class="chef-area" id="concChefs">
+              <div class="chef-unit">
+                <div class="chef-icon idle" id="concChef0">👨‍🍳</div>
+                <div class="chef-dish" id="concDish0">空闲</div>
+              </div>
+            </div>
+            <div class="order-queue" id="concQueue"></div>
+            <div class="kitchen-timer-val" id="concTimer">0.0s</div>
+            <div class="kitchen-status-text" id="concStatus">等待开始</div>
+          </div>
+          <!-- 并行 -->
+          <div class="kitchen-box">
+            <h4>🚀 并行执行</h4>
+            <p class="kitchen-subtitle">3 个厨师，同时做</p>
+            <div class="chef-area" id="parChefs">
+              <div class="chef-unit">
+                <div class="chef-icon idle" id="parChef0">👨‍🍳</div>
+                <div class="chef-dish" id="parDish0">空闲</div>
+              </div>
+              <div class="chef-unit">
+                <div class="chef-icon idle" id="parChef1">👩‍🍳</div>
+                <div class="chef-dish" id="parDish1">空闲</div>
+              </div>
+              <div class="chef-unit">
+                <div class="chef-icon idle" id="parChef2">🧑‍🍳</div>
+                <div class="chef-dish" id="parDish2">空闲</div>
+              </div>
+            </div>
+            <div class="order-queue" id="parQueue"></div>
+            <div class="kitchen-timer-val" id="parTimer">0.0s</div>
+            <div class="kitchen-status-text" id="parStatus">等待开始</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="key-point">
+        <strong>一句话总结：</strong>
+        顺序 = 一个人做完一件事再做下一件；
+        并发 = 一个人交替做多件事（看起来同时）；
+        并行 = 多个人真的同时做多件事。
+      </div>
+
+      <!-- ==================== 2. 三个概念对比 ==================== -->
+      <h2>并发 vs 并行 vs 异步</h2>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="concept-icon">🔄</div>
+          <div class="concept-name">并发 (Concurrency)</div>
+          <div class="concept-desc"><strong>交替执行</strong>多个任务，在一个 CPU 核心上快速切换，看起来「同时」。</div>
+          <div class="concept-analogy">🍳 一个厨师交替炒三道菜</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">⚡</div>
+          <div class="concept-name">并行 (Parallelism)</div>
+          <div class="concept-desc">多个 CPU 核心<strong>真正同时</strong>执行多个任务。</div>
+          <div class="concept-analogy">🍳 三个厨师各炒各的菜</div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">📨</div>
+          <div class="concept-name">异步 (Async)</div>
+          <div class="concept-desc">发起请求后<strong>不等结果</strong>，先做别的事。上一节已学！</div>
+          <div class="concept-analogy">📱 下单外卖后继续做自己的事</div>
+        </div>
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>概念</th><th>说明</th><th>Python 实现</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>并发</strong></td><td>交替执行多个任务</td><td>多线程 <code>threading</code></td></tr>
+          <tr><td><strong>并行</strong></td><td>真正同时执行</td><td>多进程 <code>multiprocessing</code></td></tr>
+          <tr><td><strong>异步</strong></td><td>非阻塞 I/O</td><td><code>asyncio</code>（上一节已学）</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ==================== 3. 动态时间线对比 ==================== -->
+      <h2>图解：时间线上看区别</h2>
+      <p>下面的动画展示三个任务（A/B/C）在不同模式下的执行时间线：</p>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>⏱ 时间线动画</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-green" id="cvpRunBtn">▶ 开始演示</button>
+            <button class="run-btn run-btn-orange" id="cvpResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="cvp-container" id="cvpContainer">
+          <!-- 顺序 -->
+          <div class="cvp-section">
+            <div class="cvp-section-title">
+              <span class="vs-badge vs-badge-seq">顺序</span> 一个一个做（总共 6 秒）
+            </div>
+            <div class="cvp-core-row">
+              <span class="cvp-core-label">CPU</span>
+              <div class="cvp-core-track" id="cvpSeqTrack">
+                <div class="cvp-seg task-a" id="cvpSeqA" style="left:0%;width:33.3%">A</div>
+                <div class="cvp-seg task-b" id="cvpSeqB" style="left:33.3%;width:33.3%">B</div>
+                <div class="cvp-seg task-c" id="cvpSeqC" style="left:66.6%;width:33.4%">C</div>
+              </div>
+            </div>
+            <div class="cvp-time-axis"><span>0s</span><span>2s</span><span>4s</span><span>6s</span></div>
+            <div class="cvp-result-badge cvp-result-seq" id="cvpSeqResult" style="display:none">总计 6s</div>
+          </div>
+
+          <!-- 并发 -->
+          <div class="cvp-section">
+            <div class="cvp-section-title">
+              <span class="vs-badge vs-badge-thread">并发</span> 一个核心交替切换（GIL 限制下）
+            </div>
+            <div class="cvp-core-row">
+              <span class="cvp-core-label">CPU</span>
+              <div class="cvp-core-track" id="cvpConcTrack">
+                <div class="cvp-seg task-a" id="cvpConcA1" style="left:0%;width:11%">A</div>
+                <div class="cvp-seg task-b" id="cvpConcB1" style="left:11%;width:11%">B</div>
+                <div class="cvp-seg task-c" id="cvpConcC1" style="left:22%;width:11%">C</div>
+                <div class="cvp-seg task-a" id="cvpConcA2" style="left:33%;width:11%">A</div>
+                <div class="cvp-seg task-b" id="cvpConcB2" style="left:44%;width:11%">B</div>
+                <div class="cvp-seg task-c" id="cvpConcC2" style="left:55%;width:11%">C</div>
+                <div class="cvp-seg task-a" id="cvpConcA3" style="left:66%;width:11%">A</div>
+                <div class="cvp-seg task-b" id="cvpConcB3" style="left:77%;width:11%">B</div>
+                <div class="cvp-seg task-c" id="cvpConcC3" style="left:88%;width:12%">C</div>
+              </div>
+            </div>
+            <div class="cvp-time-axis"><span>0s</span><span>2s</span><span>4s</span><span>6s</span></div>
+            <div class="cvp-result-badge cvp-result-conc" id="cvpConcResult" style="display:none">CPU密集：仍然 ~6s（GIL限制）</div>
+          </div>
+
+          <!-- 并行 -->
+          <div class="cvp-section">
+            <div class="cvp-section-title">
+              <span class="vs-badge vs-badge-process">并行</span> 三个核心同时执行
+            </div>
+            <div class="cvp-core-row">
+              <span class="cvp-core-label">核心1</span>
+              <div class="cvp-core-track"><div class="cvp-seg task-a" id="cvpParA" style="left:0%;width:33.3%">A</div></div>
+            </div>
+            <div class="cvp-core-row">
+              <span class="cvp-core-label">核心2</span>
+              <div class="cvp-core-track"><div class="cvp-seg task-b" id="cvpParB" style="left:0%;width:33.3%">B</div></div>
+            </div>
+            <div class="cvp-core-row">
+              <span class="cvp-core-label">核心3</span>
+              <div class="cvp-core-track"><div class="cvp-seg task-c" id="cvpParC" style="left:0%;width:33.3%">C</div></div>
+            </div>
+            <div class="cvp-time-axis"><span>0s</span><span>2s</span><span>4s</span><span>6s</span></div>
+            <div class="cvp-result-badge cvp-result-par" id="cvpParResult" style="display:none">只需 ~2s！🚀</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="key-point">
+        <strong>注意：</strong>对于 <strong>CPU 密集型任务</strong>（数学计算等），Python 的多线程因为 GIL 的存在，速度并不会提升。
+        只有<strong>多进程</strong>才能利用多核实现真正并行。但对于 <strong>I/O 密集型任务</strong>（网络请求、读文件），多线程是有效的。
+      </div>
+
+      <!-- ==================== 4. GIL 是什么 ==================== -->
+      <h2>底层原理：GIL 到底是什么？</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🔒 类比：会议室的麦克风</div>
+        想象公司有一个会议室（CPU），三个人（线程）要开会。<br>
+        <strong>GIL</strong> 就像只有<strong>一个麦克风</strong> —— 虽然三个人都在会议室里，但<strong>同一时刻只有拿着麦克风的人能说话</strong>。<br>
+        说了一段时间后，麦克风传给下一个人。所以虽然「三个人同时在会议室」（并发），但<strong>不是同时说话</strong>（非并行）。
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>要点</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>什么是 GIL</td><td>同一时刻只允许一个线程执行 Python 字节码</td></tr>
+          <tr><td>影响</td><td><strong>CPU 密集型</strong>多线程无法利用多核</td></tr>
+          <tr><td>不影响</td><td><strong>I/O 密集型</strong>（网络、文件），GIL 在 I/O 等待时释放</td></tr>
+          <tr><td>解决</td><td>CPU 密集型 → 多进程；I/O 密集型 → 多线程或异步</td></tr>
+        </tbody>
+      </table>
+
+      <blockquote class="tip-block">
+        Django 主要是 <strong>I/O 密集型</strong>（数据库查询、HTTP 请求），多线程有效。
+      </blockquote>
+
+      <!-- ==================== 5. GIL 步进器 ==================== -->
+      <h2>图解：GIL 是怎么工作的？</h2>
+      <p>下面的步进器展示三个线程在 GIL 限制下如何「轮流」拿锁执行：</p>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🔒 GIL 工作流程步进器</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="gilStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="gilAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="gilResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="gil-stepper">
+          <div class="gil-scene">
+            <div class="gil-lock-box" id="gilLockBox">
+              <div class="gil-lock-icon">🔒</div>
+              <div style="font-size:11px;color:var(--text-sub)">GIL</div>
+              <div class="gil-lock-owner" id="gilLockOwner">空闲</div>
+            </div>
+            <div class="gil-threads">
+              <div class="gil-thread" id="gilT0">
+                <span class="gil-thread-name">线程 A</span>
+                <span>下载文件（I/O）</span>
+                <span class="gil-thread-status" id="gilS0">等待开始</span>
+              </div>
+              <div class="gil-thread" id="gilT1">
+                <span class="gil-thread-name">线程 B</span>
+                <span>查询数据库（I/O）</span>
+                <span class="gil-thread-status" id="gilS1">等待开始</span>
+              </div>
+              <div class="gil-thread" id="gilT2">
+                <span class="gil-thread-name">线程 C</span>
+                <span>数学计算（CPU）</span>
+                <span class="gil-thread-status" id="gilS2">等待开始</span>
+              </div>
+            </div>
+          </div>
+          <div class="gil-narr" id="gilNarr">👆 点击「下一步」，看 GIL 如何在三个线程之间切换。注意 I/O 等待时 GIL 会<strong>主动释放</strong>。</div>
+          <div class="gil-counter" id="gilCounter">第 0 / 8 步</div>
+        </div>
+      </div>
+
+      <div class="key-point">
+        <strong>关键洞察：</strong>GIL 在线程遇到 I/O 操作（网络请求、文件读写）时会<strong>主动释放</strong>，
+        让其他线程执行。所以 I/O 密集型程序用多线程<strong>仍然有效</strong>！只有 CPU 密集型计算才会被 GIL 卡住。
+      </div>
+
+      <!-- ==================== 6. 内存模型 ==================== -->
+      <h2>底层原理：线程与进程的内存模型</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🏠 类比：合租 vs 独居</div>
+        <strong>多线程</strong> = 合租一套房子 —— 客厅、厨房是<strong>共享的</strong>，只有卧室是自己的。你改了客厅的灯，室友也能看到。<br>
+        <strong>多进程</strong> = 各住各的房子 —— 一切都是<strong>独立的</strong>。你在自己家怎么改，别人的家不受影响。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🧠 内存空间对比</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="memStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="memAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="memResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="mem-scene">
+          <!-- 多线程 -->
+          <div class="mem-panel">
+            <h4>🧵 多线程 — 共享内存</h4>
+            <div class="mem-thread-container">
+              <div class="mem-shared-zone">
+                <div class="mem-box-title">共享内存区域（全局变量）</div>
+                <div class="mem-var global-var" id="memThreadGlobal">counter = <span class="mem-val" id="memTGVal">0</span></div>
+                <div class="mem-var global-var" id="memThreadList">data = <span class="mem-val" id="memTLVal">[]</span></div>
+              </div>
+              <div class="mem-thread-stacks">
+                <div class="mem-stack-box" id="memStackA">
+                  <div class="mem-box-title">线程 A 栈</div>
+                  <div class="mem-var local-var" id="memLocalA">local_a = <span class="mem-val" id="memLAVal">—</span></div>
+                </div>
+                <div class="mem-stack-box" id="memStackB">
+                  <div class="mem-box-title">线程 B 栈</div>
+                  <div class="mem-var local-var" id="memLocalB">local_b = <span class="mem-val" id="memLBVal">—</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 多进程 -->
+          <div class="mem-panel">
+            <h4>⚙️ 多进程 — 独立内存</h4>
+            <div class="mem-process-wrap">
+              <div class="mem-process-box" id="memProc0">
+                <div class="mem-box-title">进程 A 的内存</div>
+                <div class="mem-var global-var" id="memProcAG">counter = <span class="mem-val" id="memPAGVal">0</span></div>
+                <div class="mem-var local-var" id="memProcAL">local_a = <span class="mem-val" id="memPALVal">—</span></div>
+              </div>
+              <div class="mem-process-box" id="memProc1">
+                <div class="mem-box-title">进程 B 的内存</div>
+                <div class="mem-var global-var" id="memProcBG">counter = <span class="mem-val" id="memPBGVal">0</span></div>
+                <div class="mem-var local-var" id="memProcBL">local_b = <span class="mem-val" id="memPBLVal">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mem-narr" id="memNarr">👆 点击「下一步」，观察线程和进程在内存操作上的<strong>关键区别</strong>。</div>
+        <div class="gil-counter" id="memCounter">第 0 / 6 步</div>
+      </div>
+
+      <div class="key-point">
+        <strong>核心区别：</strong>多线程<strong>共享内存</strong>，通信方便但容易出 bug（竞态条件）；
+        多进程<strong>独立内存</strong>，更安全但通信需要额外机制（如 Queue、Pipe）。
+      </div>
+
+      <!-- ==================== 7. 上下文切换 ==================== -->
+      <h2>底层原理：上下文切换是什么？</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">📚 类比：同时看两本书</div>
+        你在看数学书，突然要切换去看英语书。你需要：<br>
+        1️⃣ <strong>记住</strong>数学书看到第几页、在想什么（保存上下文）<br>
+        2️⃣ <strong>回忆</strong>英语书上次看到哪了（恢复上下文）<br>
+        3️⃣ 继续看英语书<br>
+        这个「记住 → 回忆」的过程就是<strong>上下文切换</strong>，它需要时间！切换越频繁，浪费的时间越多。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🔄 上下文切换过程</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="ctxStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="ctxAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="ctxResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="ctx-scene">
+          <div class="ctx-cpu">
+            <div class="ctx-cpu-chip" id="ctxCpuChip">
+              <span>🖥️ CPU</span>
+              <span class="ctx-running-label" id="ctxRunningLabel">空闲</span>
+            </div>
+          </div>
+
+          <div class="ctx-threads-row">
+            <div class="ctx-thread-box" id="ctxThreadA">
+              <div class="ctx-thread-title">🔵 线程 A</div>
+              <div class="ctx-thread-state" id="ctxStateA">等待开始</div>
+              <div class="ctx-registers" id="ctxRegsA">
+                <div class="ctx-reg" id="ctxRegA0">PC=0x100</div>
+                <div class="ctx-reg" id="ctxRegA1">SP=0xF00</div>
+                <div class="ctx-reg" id="ctxRegA2">R1=42</div>
+              </div>
+            </div>
+            <div class="ctx-switch-arrow" id="ctxArrow">
+              <div class="ctx-arrow-icon">⇄</div>
+              <div id="ctxArrowLabel">切换</div>
+            </div>
+            <div class="ctx-thread-box" id="ctxThreadB">
+              <div class="ctx-thread-title">🟣 线程 B</div>
+              <div class="ctx-thread-state" id="ctxStateB">等待开始</div>
+              <div class="ctx-registers" id="ctxRegsB">
+                <div class="ctx-reg" id="ctxRegB0">PC=0x200</div>
+                <div class="ctx-reg" id="ctxRegB1">SP=0xE00</div>
+                <div class="ctx-reg" id="ctxRegB2">R1=7</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:6px">切换开销对比</div>
+          <div class="ctx-cost-bar">
+            <span class="ctx-cost-label">线程切换</span>
+            <div class="ctx-cost-track">
+              <div class="ctx-cost-fill thread-cost" id="ctxCostThread">~几微秒</div>
+            </div>
+          </div>
+          <div class="ctx-cost-bar" style="margin-top:8px">
+            <span class="ctx-cost-label">进程切换</span>
+            <div class="ctx-cost-track">
+              <div class="ctx-cost-fill process-cost" id="ctxCostProcess">~几十微秒</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gil-narr" id="ctxNarr">👆 点击「下一步」，看 CPU 在两个线程之间切换时要做哪些事情。</div>
+        <div class="gil-counter" id="ctxCounter">第 0 / 6 步</div>
+      </div>
+
+      <div class="key-point">
+        <strong>为什么要了解上下文切换？</strong><br>
+        线程切换<strong>比进程切换快得多</strong>（因为线程共享内存，不用切换页表）。<br>
+        但切换仍有开销 —— 创建太多线程反而会因为频繁切换导致性能下降，这就是为什么要用<strong>线程池</strong>来控制数量。
+      </div>
+
+      <!-- ==================== 8. 竞态条件 ==================== -->
+      <h2>底层原理：竞态条件（最常见的并发 Bug）</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🏧 类比：两人同时取同一个 ATM</div>
+        账户余额 100 元。你和室友<strong>同时</strong>在两台 ATM 取 50 元：<br>
+        ✅ <strong>正确：</strong>你取 50 → 余额变 50 → 室友取 50 → 余额变 0<br>
+        ❌ <strong>竞态：</strong>两人同时读到余额 100 → 两人都取 50 → 余额变 50（少扣了 50！）<br>
+        这就是<strong>竞态条件</strong> —— 多个线程同时读写共享数据，结果不可预测。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🐛 竞态条件步进演示</h4>
+          <div class="demo-controls">
+            <button class="run-btn run-btn-primary" id="raceStepBtn">下一步 →</button>
+            <button class="run-btn run-btn-green" id="raceAutoBtn">▶ 自动播放</button>
+            <button class="run-btn run-btn-orange" id="raceResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="race-scene">
+          <div class="race-counter-display">
+            <div class="race-counter-label">共享变量 counter（期望结果 = 2）</div>
+            <div class="race-counter-val" id="raceCounterVal">0</div>
+          </div>
+
+          <div class="race-threads-row">
+            <div class="race-thread-panel" id="racePanelA">
+              <div class="race-t-title">🔵 线程 A：counter += 1</div>
+              <div class="race-step-list">
+                <div class="race-step" id="raceStepA0"><span class="step-marker">1</span>读取 counter → <span id="rsA0Val">?</span></div>
+                <div class="race-step" id="raceStepA1"><span class="step-marker">2</span>计算 <span id="rsA1Val">?</span> + 1 = <span id="rsA1Res">?</span></div>
+                <div class="race-step" id="raceStepA2"><span class="step-marker">3</span>写回 counter = <span id="rsA2Val">?</span></div>
+              </div>
+            </div>
+            <div class="race-vs-label">VS</div>
+            <div class="race-thread-panel" id="racePanelB">
+              <div class="race-t-title">🟣 线程 B：counter += 1</div>
+              <div class="race-step-list">
+                <div class="race-step" id="raceStepB0"><span class="step-marker">1</span>读取 counter → <span id="rsB0Val">?</span></div>
+                <div class="race-step" id="raceStepB1"><span class="step-marker">2</span>计算 <span id="rsB1Val">?</span> + 1 = <span id="rsB1Res">?</span></div>
+                <div class="race-step" id="raceStepB2"><span class="step-marker">3</span>写回 counter = <span id="rsB2Val">?</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="race-narr" id="raceNarr">👆 点击「下一步」，看两个线程同时执行 <code>counter += 1</code> 时会发生什么。<br>注意：<code>counter += 1</code> 看起来是一行代码，但底层其实是<strong>三步操作</strong>（读取→计算→写回）。</div>
+          <div class="gil-counter" id="raceCounter">第 0 / 6 步</div>
+        </div>
+      </div>
+
+      <div class="key-point">
+        <strong>如何避免竞态条件？</strong><br>
+        使用<strong>锁 (Lock)</strong>：<code>with threading.Lock():</code> 保证同一时刻只有一个线程操作共享数据。<br>
+        或使用<strong>线程安全的数据结构</strong>：如 <code>queue.Queue</code>。<br>
+        Python 的 GIL 能避免一部分竞态，但<strong>不能完全避免</strong>（<code>+=</code> 这种复合操作仍不安全）。
+      </div>
+
+      <div class="code-label">用锁保护共享变量</div>
+      <pre class="code-block"><code>import threading
+
+counter = 0
+lock = threading.Lock()
+
+def safe_increment():
+    global counter
+    for _ in range(100000):
+        with lock:            # 加锁：同一时刻只有一个线程能进入
+            counter += 1      # 读取→计算→写回，三步不会被打断
+
+threads = [threading.Thread(target=safe_increment) for _ in range(2)]
+for t in threads: t.start()
+for t in threads: t.join()
+print(f"counter = {counter}")  # 永远是 200000 ✅</code></pre>
+
+      <!-- ==================== 9. 多线程 vs 多进程对比 ==================== -->
+      <h2>对比演示：多线程 vs 多进程</h2>
+      <p>点击按钮，观察两种方式处理任务的区别：</p>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>⚔️ 线程 vs 进程 实时对比</h4>
+          <div class="demo-controls">
+            <label style="font-size:13px;color:var(--text-sub)">任务类型：</label>
+            <select id="tpTaskType">
+              <option value="io">I/O 密集（网络请求）</option>
+              <option value="cpu">CPU 密集（数学计算）</option>
+            </select>
+            <button class="run-btn run-btn-primary" id="tpRunBtn">▶ 开始对比</button>
+          </div>
+        </div>
+
+        <div class="tp-compare">
+          <div class="tp-box thread-box">
+            <h4>🧵 多线程 (threading)</h4>
+            <div class="tp-memory-label">共享内存空间</div>
+            <div class="tp-workers" id="tpThreadWorkers">
+              <div class="tp-worker" id="tw0">
+                <div class="tp-worker-icon">🧵</div>
+                <div class="tp-worker-name">线程1</div>
+                <div class="tp-worker-bar"><div class="tp-worker-fill" id="twf0"></div></div>
+              </div>
+              <div class="tp-worker" id="tw1">
+                <div class="tp-worker-icon">🧵</div>
+                <div class="tp-worker-name">线程2</div>
+                <div class="tp-worker-bar"><div class="tp-worker-fill" id="twf1"></div></div>
+              </div>
+              <div class="tp-worker" id="tw2">
+                <div class="tp-worker-icon">🧵</div>
+                <div class="tp-worker-name">线程3</div>
+                <div class="tp-worker-bar"><div class="tp-worker-fill" id="twf2"></div></div>
+              </div>
+            </div>
+            <div class="tp-timer-val" id="tpThreadTimer">0.0s</div>
+          </div>
+          <div class="tp-box process-box">
+            <h4>⚙️ 多进程 (multiprocessing)</h4>
+            <div class="tp-memory-label">各自独立内存空间</div>
+            <div class="tp-workers" id="tpProcessWorkers">
+              <div class="tp-worker" id="pw0">
+                <div class="tp-worker-icon">⚙️</div>
+                <div class="tp-worker-name">进程1</div>
+                <div class="tp-worker-bar"><div class="tp-worker-fill" id="pwf0"></div></div>
+              </div>
+              <div class="tp-worker" id="pw1">
+                <div class="tp-worker-icon">⚙️</div>
+                <div class="tp-worker-name">进程2</div>
+                <div class="tp-worker-bar"><div class="tp-worker-fill" id="pwf1"></div></div>
+              </div>
+              <div class="tp-worker" id="pw2">
+                <div class="tp-worker-icon">⚙️</div>
+                <div class="tp-worker-name">进程3</div>
+                <div class="tp-worker-bar"><div class="tp-worker-fill" id="pwf2"></div></div>
+              </div>
+            </div>
+            <div class="tp-timer-val" id="tpProcessTimer">0.0s</div>
+          </div>
+        </div>
+
+        <div class="log-box" id="tpLog"><span style="color:#6b8f7b">// 选择任务类型并点击「开始对比」...</span></div>
+      </div>
+
+      <!-- ==================== 7. 线程池可视化 ==================== -->
+      <h2>图解：线程池是怎么工作的？</h2>
+
+      <div class="analogy-box">
+        <div class="analogy-title">🏊 类比：游泳馆的泳道</div>
+        线程池 = 游泳馆。泳道数量（<code>max_workers</code>）是固定的。<br>
+        当有人（任务）来游泳时，如果有空泳道就直接下水；如果泳道满了，就在外面<strong>排队等</strong>。<br>
+        有人游完了，排队的第一个人立刻进入泳道。这样不需要反复「建泳道、拆泳道」，节省开销。
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-header">
+          <h4>🏊 线程池工作流程</h4>
+          <div class="demo-controls">
+            <label style="font-size:13px;color:var(--text-sub)">Workers:</label>
+            <select id="poolWorkerCount">
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4" selected>4</option>
+            </select>
+            <button class="run-btn run-btn-green" id="poolRunBtn">▶ 开始</button>
+            <button class="run-btn run-btn-orange" id="poolResetBtn">↺ 重置</button>
+          </div>
+        </div>
+
+        <div class="pool-vis">
+          <div class="pool-scene">
+            <div class="pool-queue-col">
+              <div class="pool-queue-title">📋 任务队列</div>
+              <div class="pool-queue-list" id="poolQueue"></div>
+            </div>
+            <div class="pool-workers-col">
+              <div class="pool-workers-title">🏊 工作线程</div>
+              <div class="pool-workers-grid" id="poolWorkers"></div>
+            </div>
+            <div class="pool-done-col">
+              <div class="pool-done-title">✅ 已完成</div>
+              <div class="pool-done-list" id="poolDone"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timer-display">
+          <span class="timer-icon">⏱</span>
+          <span class="timer-text">总耗时</span>
+          <span class="timer-value" id="poolTimerVal">0.0s</span>
+          <span class="timer-status waiting" id="poolTimerStatus">等待开始</span>
+        </div>
+      </div>
+
+      <!-- ==================== 8. 代码示例 ==================== -->
+      <h2>代码实战</h2>
+
+      <div class="code-label">多线程基本用法</div>
+      <pre class="code-block"><code>import threading
+import time
+
+def download(name, seconds):
+    print(f"  [{name}] 开始下载...")
+    time.sleep(seconds)
+    print(f"  [{name}] 完成 ({seconds}s)")
+
+# 顺序执行
+start = time.time()
+download("文件A", 1)
+download("文件B", 2)
+print(f"顺序: {time.time() - start:.1f}s\n")
+
+# 多线程并发
+start = time.time()
+t1 = threading.Thread(target=download, args=("文件A", 1))
+t2 = threading.Thread(target=download, args=("文件B", 2))
+t1.start(); t2.start()
+t1.join(); t2.join()
+print(f"多线程: {time.time() - start:.1f}s")</code></pre>
+
+      <div class="code-label">ThreadPoolExecutor</div>
+      <pre class="code-block"><code>from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+
+def fetch_url(url, delay):
+    time.sleep(delay)
+    return f"{url} -> 200 OK ({delay}s)"
+
+urls = [
+    ("https://api.example.com/users", 1),
+    ("https://api.example.com/posts", 2),
+    ("https://api.example.com/comments", 1.5),
+    ("https://api.example.com/albums", 0.8),
+]
+
+start = time.time()
+with ThreadPoolExecutor(max_workers=4) as executor:
+    futures = {executor.submit(fetch_url, url, d): url for url, d in urls}
+    for future in as_completed(futures):
+        print(f"  {future.result()}")
+
+print(f"\n总耗时: {time.time() - start:.1f}s (顺序需 {sum(d for _, d in urls)}s)")</code></pre>
+
+      <!-- ==================== 9. 选择指南 ==================== -->
+      <h2>怎么选？一张图搞定</h2>
+
+      <div class="guide-grid">
+        <div class="guide-card">
+          <div class="guide-icon">🌐</div>
+          <div class="guide-title">网络请求 / API 调用</div>
+          <div class="guide-scenario">大量 HTTP 请求、爬虫、调用第三方 API。等待网络响应是主要瓶颈。</div>
+          <span class="guide-tool tool-async">asyncio / aiohttp</span>
+          <span class="guide-tool tool-thread">threading</span>
+        </div>
+        <div class="guide-card">
+          <div class="guide-icon">🗄️</div>
+          <div class="guide-title">数据库查询</div>
+          <div class="guide-scenario">Django ORM 查询、SQL 操作。等待数据库响应时 GIL 释放。</div>
+          <span class="guide-tool tool-thread">threading</span>
+          <span class="guide-tool tool-async">async ORM</span>
+        </div>
+        <div class="guide-card">
+          <div class="guide-icon">🧮</div>
+          <div class="guide-title">数学计算 / 数据处理</div>
+          <div class="guide-scenario">图像处理、科学计算、大量循环。需要真正利用多个 CPU 核心。</div>
+          <span class="guide-tool tool-process">multiprocessing</span>
+        </div>
+        <div class="guide-card">
+          <div class="guide-icon">📁</div>
+          <div class="guide-title">文件读写</div>
+          <div class="guide-scenario">批量读写文件、日志处理。磁盘 I/O 等待时线程可切换。</div>
+          <span class="guide-tool tool-thread">threading</span>
+        </div>
+      </div>
+
+      <div class="key-point">
+        <strong>记住这个口诀：</strong><br>
+        I/O 密集 → 多线程 <code>threading</code> 或 异步 <code>asyncio</code><br>
+        CPU 密集 → 多进程 <code>multiprocessing</code><br>
+        Django 项目 → 大部分场景用多线程就够了！
+      </div>
+
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 西南科技大学蓝鲸Sass开发课程</p>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    const dishes = [
+      { name: '🥗 凉拌', time: 1500 },
+      { name: '🍖 红烧', time: 2500 },
+      { name: '🍜 汤面', time: 2000 },
+    ];
+    const SPEED = 1;
+
+    /* ===================== 1. 厨房做菜演示 ===================== */
+    (function kitchenDemo() {
+      const seqBtn = document.getElementById('kitchenSeqBtn');
+      const concBtn = document.getElementById('kitchenConcBtn');
+      const parBtn = document.getElementById('kitchenParBtn');
+      const allBtns = [seqBtn, concBtn, parBtn];
+
+      function disableAll(v) { allBtns.forEach(b => b.disabled = v); }
+
+      function resetPanel(prefix, chefCount) {
+        for (let i = 0; i < chefCount; i++) {
+          const icon = document.getElementById(prefix + 'Chef' + i);
+          const dish = document.getElementById(prefix + 'Dish' + i);
+          if (icon) { icon.className = 'chef-icon idle'; }
+          if (dish) { dish.textContent = '空闲'; dish.className = 'chef-dish'; }
+        }
+        document.getElementById(prefix + 'Timer').textContent = '0.0s';
+        document.getElementById(prefix + 'Status').textContent = '等待开始';
+        document.getElementById(prefix + 'Queue').innerHTML = '';
+      }
+
+      function buildQueue(prefix) {
+        const qEl = document.getElementById(prefix + 'Queue');
+        qEl.innerHTML = '';
+        dishes.forEach((d, i) => {
+          const span = document.createElement('span');
+          span.className = 'order-item';
+          span.id = prefix + 'Q' + i;
+          span.textContent = d.name;
+          qEl.appendChild(span);
+        });
+      }
+
+      function startTimer(prefix) {
+        const el = document.getElementById(prefix + 'Timer');
+        const t0 = performance.now();
+        const id = setInterval(() => {
+          el.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's';
+        }, 100);
+        return { stop() { clearInterval(id); el.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's'; } };
+      }
+
+      function sleep(ms) { return new Promise(r => setTimeout(r, ms * SPEED)); }
+
+      async function runSeq() {
+        resetPanel('seq', 1);
+        buildQueue('seq');
+        disableAll(true);
+        const timer = startTimer('seq');
+        const statusEl = document.getElementById('seqStatus');
+        const chef = document.getElementById('seqChef0');
+        const dishEl = document.getElementById('seqDish0');
+
+        for (let i = 0; i < dishes.length; i++) {
+          const d = dishes[i];
+          document.getElementById('seqQ' + i).className = 'order-item processing';
+          chef.className = 'chef-icon working';
+          dishEl.textContent = d.name; dishEl.className = 'chef-dish active';
+          statusEl.textContent = '正在做 ' + d.name;
+          await sleep(d.time);
+          document.getElementById('seqQ' + i).className = 'order-item completed';
+          chef.className = 'chef-icon idle';
+          dishEl.textContent = '空闲'; dishEl.className = 'chef-dish';
+        }
+        chef.className = 'chef-icon done';
+        dishEl.textContent = '全部完成！'; dishEl.className = 'chef-dish active';
+        statusEl.textContent = '✅ 全部完成';
+        timer.stop();
+        disableAll(false);
+      }
+
+      async function runConc() {
+        resetPanel('conc', 1);
+        buildQueue('conc');
+        disableAll(true);
+        const timer = startTimer('conc');
+        const statusEl = document.getElementById('concStatus');
+        const chef = document.getElementById('concChef0');
+        const dishEl = document.getElementById('concDish0');
+
+        const remaining = dishes.map((d, i) => ({ ...d, idx: i, left: d.time }));
+        const slice = 400;
+
+        remaining.forEach((_, i) => {
+          document.getElementById('concQ' + i).className = 'order-item processing';
+        });
+
+        while (remaining.length > 0) {
+          for (let j = remaining.length - 1; j >= 0; j--) {
+            const task = remaining[j];
+            chef.className = 'chef-icon working';
+            dishEl.textContent = task.name; dishEl.className = 'chef-dish active';
+            statusEl.textContent = '切换到 ' + task.name;
+
+            const work = Math.min(slice, task.left);
+            await sleep(work);
+            task.left -= work;
+
+            if (task.left <= 0) {
+              document.getElementById('concQ' + task.idx).className = 'order-item completed';
+              remaining.splice(j, 1);
+            }
+          }
+        }
+        chef.className = 'chef-icon done';
+        dishEl.textContent = '全部完成！'; dishEl.className = 'chef-dish active';
+        statusEl.textContent = '✅ 全部完成';
+        timer.stop();
+        disableAll(false);
+      }
+
+      async function runPar() {
+        resetPanel('par', 3);
+        buildQueue('par');
+        disableAll(true);
+        const timer = startTimer('par');
+        const statusEl = document.getElementById('parStatus');
+
+        statusEl.textContent = '三个厨师同时开工！';
+        const tasks = dishes.map((d, i) => (async () => {
+          document.getElementById('parQ' + i).className = 'order-item processing';
+          const chefIcon = document.getElementById('parChef' + i);
+          const dishEl = document.getElementById('parDish' + i);
+          chefIcon.className = 'chef-icon working';
+          dishEl.textContent = d.name; dishEl.className = 'chef-dish active';
+          await sleep(d.time);
+          chefIcon.className = 'chef-icon done';
+          dishEl.textContent = '✅ 完成'; dishEl.className = 'chef-dish active';
+          document.getElementById('parQ' + i).className = 'order-item completed';
+        })());
+
+        await Promise.all(tasks);
+        statusEl.textContent = '✅ 全部完成';
+        timer.stop();
+        disableAll(false);
+      }
+
+      seqBtn.addEventListener('click', runSeq);
+      concBtn.addEventListener('click', runConc);
+      parBtn.addEventListener('click', runPar);
+    })();
+
+    /* ===================== 2. 时间线动画 ===================== */
+    (function cvpDemo() {
+      const runBtn = document.getElementById('cvpRunBtn');
+      const resetBtn = document.getElementById('cvpResetBtn');
+      const allSegs = document.querySelectorAll('.cvp-seg');
+      const results = ['cvpSeqResult', 'cvpConcResult', 'cvpParResult'];
+
+      function reset() {
+        allSegs.forEach(s => s.classList.remove('visible'));
+        results.forEach(id => document.getElementById(id).style.display = 'none');
+        runBtn.disabled = false;
+      }
+
+      async function run() {
+        reset();
+        runBtn.disabled = true;
+
+        const seqIds = ['cvpSeqA', 'cvpSeqB', 'cvpSeqC'];
+        for (const id of seqIds) {
+          document.getElementById(id).classList.add('visible');
+          await new Promise(r => setTimeout(r, 600));
+        }
+        document.getElementById('cvpSeqResult').style.display = 'inline-block';
+
+        await new Promise(r => setTimeout(r, 400));
+
+        const concIds = ['cvpConcA1','cvpConcB1','cvpConcC1','cvpConcA2','cvpConcB2','cvpConcC2','cvpConcA3','cvpConcB3','cvpConcC3'];
+        for (const id of concIds) {
+          document.getElementById(id).classList.add('visible');
+          await new Promise(r => setTimeout(r, 200));
+        }
+        document.getElementById('cvpConcResult').style.display = 'inline-block';
+
+        await new Promise(r => setTimeout(r, 400));
+
+        ['cvpParA', 'cvpParB', 'cvpParC'].forEach(id => document.getElementById(id).classList.add('visible'));
+        await new Promise(r => setTimeout(r, 600));
+        document.getElementById('cvpParResult').style.display = 'inline-block';
+      }
+
+      runBtn.addEventListener('click', run);
+      resetBtn.addEventListener('click', reset);
+    })();
+
+    /* ===================== 3. GIL 步进器 ===================== */
+    (function gilDemo() {
+      const steps = [
+        {
+          lock: 'locked-a', threads: ['has-lock', '', ''], statuses: ['🏃 执行中（持有GIL）', '⏳ 等待 GIL', '⏳ 等待 GIL'],
+          owner: '线程 A', narr: '🔵 线程 A 首先获得 GIL，开始执行。B 和 C 虽然已创建，但必须<strong>等 A 释放 GIL</strong> 才能执行。'
+        },
+        {
+          lock: 'unlocked', threads: ['io-wait', 'has-lock-b', 'waiting'], statuses: ['💤 I/O 等待（释放GIL）', '🏃 执行中（持有GIL）', '⏳ 等待 GIL'],
+          owner: '线程 B', narr: '🟣 A 发起网络请求，遇到 I/O 等待 → <strong>主动释放 GIL</strong>！B 立刻拿到 GIL 开始执行。这就是 I/O 密集型多线程有效的原因！'
+        },
+        {
+          lock: 'unlocked', threads: ['io-wait', 'io-wait', 'has-lock-c'], statuses: ['💤 I/O 等待', '💤 I/O 等待（释放GIL）', '🏃 执行中（持有GIL）'],
+          owner: '线程 C', narr: '🔴 B 也遇到 I/O → 释放 GIL。C 拿到 GIL，开始执行 CPU 计算。此时 A、B 都在等待网络数据。'
+        },
+        {
+          lock: 'locked-c', threads: ['io-wait', 'io-wait', 'has-lock-c'], statuses: ['💤 I/O 等待', '💤 I/O 等待', '🏃 计算中...（持有GIL）'],
+          owner: '线程 C', narr: '🔴 C 在做 CPU 计算，不会释放 GIL。A 和 B 的网络数据即使回来了，也要等 C 用完时间片。'
+        },
+        {
+          lock: 'locked-a', threads: ['has-lock', 'waiting', 'waiting'], statuses: ['📬 数据回来！继续执行', '📬 数据回来，等 GIL', '⏳ 时间片到，让出 GIL'],
+          owner: '线程 A', narr: '🔵 C 的时间片到了，Python 强制让 C 让出 GIL（每 5ms 检查一次）。A 拿到 GIL，处理收到的网络数据。'
+        },
+        {
+          lock: 'locked-b', threads: ['done', 'has-lock-b', 'waiting'], statuses: ['✅ 完成', '🏃 处理数据（持有GIL）', '⏳ 等待 GIL'],
+          owner: '线程 B', narr: '🟣 A 完成！GIL 释放，B 拿到锁，处理它收到的数据库查询结果。'
+        },
+        {
+          lock: 'locked-c', threads: ['done', 'done', 'has-lock-c'], statuses: ['✅ 完成', '✅ 完成', '🏃 继续计算（持有GIL）'],
+          owner: '线程 C', narr: '🔴 B 完成！C 拿回 GIL，继续完成剩余的 CPU 计算。'
+        },
+        {
+          lock: 'unlocked', threads: ['done', 'done', 'done'], statuses: ['✅ 完成', '✅ 完成', '✅ 完成'],
+          owner: '全部完成', narr: '🎉 <strong>三个线程全部完成！</strong>注意观察：I/O 等待时 GIL 被释放，其他线程可以执行，所以总时间 < 三个任务时间之和。'
+        },
+      ];
+
+      let current = -1, autoTimer = null;
+      const lockBox = document.getElementById('gilLockBox');
+      const ownerEl = document.getElementById('gilLockOwner');
+      const narrEl = document.getElementById('gilNarr');
+      const counterEl = document.getElementById('gilCounter');
+      const stepBtn = document.getElementById('gilStepBtn');
+      const autoBtn = document.getElementById('gilAutoBtn');
+      const resetBtn = document.getElementById('gilResetBtn');
+      const threadEls = [0, 1, 2].map(i => document.getElementById('gilT' + i));
+      const statusEls = [0, 1, 2].map(i => document.getElementById('gilS' + i));
+
+      function apply(idx) {
+        const s = steps[idx];
+        lockBox.className = 'gil-lock-box ' + s.lock;
+        lockBox.querySelector('.gil-lock-icon').textContent = s.lock === 'unlocked' ? '🔓' : '🔒';
+        ownerEl.textContent = s.owner;
+        threadEls.forEach((t, i) => { t.className = 'gil-thread' + (s.threads[i] ? ' ' + s.threads[i] : ''); });
+        statusEls.forEach((el, i) => { el.textContent = s.statuses[i]; });
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        lockBox.className = 'gil-lock-box';
+        lockBox.querySelector('.gil-lock-icon').textContent = '🔒';
+        ownerEl.textContent = '空闲';
+        threadEls.forEach(t => t.className = 'gil-thread');
+        statusEls.forEach(el => el.textContent = '等待开始');
+        narrEl.innerHTML = '👆 点击「下一步」，看 GIL 如何在三个线程之间切换。注意 I/O 等待时 GIL 会<strong>主动释放</strong>。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 2000);
+      });
+    })();
+
+    /* ===================== 4. 内存模型步进器 ===================== */
+    (function memDemo() {
+      const steps = [
+        {
+          tgVal: '0', tlVal: '[]', laVal: '—', lbVal: '—',
+          pagVal: '0', palVal: '—', pbgVal: '0', pblVal: '—',
+          highlights: [],
+          narr: '初始状态：两边各有一个 <code>counter = 0</code>。<br>多线程的 counter 在<strong>共享区</strong>；多进程的 counter 在<strong>各自的内存</strong>里。'
+        },
+        {
+          tgVal: '0', tlVal: '[]', laVal: '10', lbVal: '—',
+          pagVal: '0', palVal: '10', pbgVal: '0', pblVal: '—',
+          highlights: ['memLocalA', 'memProcAL'],
+          narr: '🔵 线程 A / 进程 A 创建了局部变量 <code>local = 10</code>。<br>局部变量是<strong>各自独有的</strong>，两种模式没有区别。'
+        },
+        {
+          tgVal: '<strong>1</strong>', tlVal: '[]', laVal: '10', lbVal: '—',
+          pagVal: '<strong>1</strong>', palVal: '10', pbgVal: '0', pblVal: '—',
+          highlights: ['memThreadGlobal', 'memProcAG'],
+          narr: '🔵 线程 A / 进程 A 执行 <code>counter += 1</code>。<br>多线程修改的是<strong>共享内存</strong>里的 counter；多进程修改的是<strong>自己那份拷贝</strong>。'
+        },
+        {
+          tgVal: '<strong>1</strong>', tlVal: '[]', laVal: '10', lbVal: '20',
+          pagVal: '1', palVal: '10', pbgVal: '0', pblVal: '<strong>20</strong>',
+          highlights: ['memLocalB', 'memProcBL'],
+          narr: '🟣 线程 B / 进程 B 创建局部变量 <code>local = 20</code>。<br>互不影响，各自独立。'
+        },
+        {
+          tgVal: '<strong style="color:#dc2626">2</strong>', tlVal: '[]', laVal: '10', lbVal: '20',
+          pagVal: '1', palVal: '10', pbgVal: '<strong>1</strong>', pblVal: '20',
+          highlights: ['memThreadGlobal', 'memProcBG'],
+          narr: '🟣 两边的 B 都执行 <code>counter += 1</code>。<br>🔑 <strong>关键区别出现！</strong><br>多线程：counter 从 1 → <strong style="color:#dc2626">2</strong>（因为 A 的修改 B 看得到）<br>多进程：进程 B 的 counter 从 0 → 1（它读的是<strong>自己那份</strong>，和 A 无关）'
+        },
+        {
+          tgVal: '<strong style="color:#dc2626">2</strong>', tlVal: '[10, 20]', laVal: '10', lbVal: '20',
+          pagVal: '1', palVal: '10', pbgVal: '1', pblVal: '20',
+          highlights: ['memThreadList'],
+          narr: '📝 线程 A 和 B 都往 <code>data</code> 列表里追加数据。<br>多线程：<strong>共享同一个列表</strong>，两个值都在 → <code>[10, 20]</code><br>多进程：各自的列表互不相干<br><br>🎯 <strong>总结：线程共享内存方便通信，但要注意竞态条件！</strong>'
+        },
+      ];
+
+      let current = -1, autoTimer = null;
+      const narrEl = document.getElementById('memNarr');
+      const counterEl = document.getElementById('memCounter');
+      const stepBtn = document.getElementById('memStepBtn');
+      const autoBtn = document.getElementById('memAutoBtn');
+      const resetBtn = document.getElementById('memResetBtn');
+
+      const valEls = {
+        tgVal: document.getElementById('memTGVal'),
+        tlVal: document.getElementById('memTLVal'),
+        laVal: document.getElementById('memLAVal'),
+        lbVal: document.getElementById('memLBVal'),
+        pagVal: document.getElementById('memPAGVal'),
+        palVal: document.getElementById('memPALVal'),
+        pbgVal: document.getElementById('memPBGVal'),
+        pblVal: document.getElementById('memPBLVal'),
+      };
+
+      function apply(idx) {
+        const s = steps[idx];
+        Object.keys(valEls).forEach(k => {
+          valEls[k].innerHTML = s[k];
+          valEls[k].className = 'mem-val';
+        });
+        document.querySelectorAll('.mem-var').forEach(el => el.classList.remove('highlight'));
+        s.highlights.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('highlight');
+        });
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        Object.keys(valEls).forEach(k => { valEls[k].textContent = k.includes('Val') && (k === 'tgVal' || k === 'pagVal' || k === 'pbgVal') ? '0' : k.includes('lVal') || k === 'tlVal' ? k === 'tlVal' ? '[]' : '—' : '0'; });
+        document.getElementById('memTGVal').textContent = '0';
+        document.getElementById('memTLVal').textContent = '[]';
+        document.getElementById('memLAVal').textContent = '—';
+        document.getElementById('memLBVal').textContent = '—';
+        document.getElementById('memPAGVal').textContent = '0';
+        document.getElementById('memPALVal').textContent = '—';
+        document.getElementById('memPBGVal').textContent = '0';
+        document.getElementById('memPBLVal').textContent = '—';
+        document.querySelectorAll('.mem-var').forEach(el => el.classList.remove('highlight'));
+        narrEl.innerHTML = '👆 点击「下一步」，观察线程和进程在内存操作上的<strong>关键区别</strong>。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 2500);
+      });
+    })();
+
+    /* ===================== 5. 上下文切换步进器 ===================== */
+    (function ctxDemo() {
+      const steps = [
+        {
+          cpu: 'running-a', label: '运行 线程A',
+          threadA: 'active-a', stateA: '🏃 运行中', regsA: ['', '', ''],
+          threadB: '', stateB: '⏸ 就绪', regsB: ['', '', ''],
+          arrow: '', costThread: '0%', costProcess: '0%',
+          narr: '🔵 线程 A 正在 CPU 上执行代码。寄存器中保存着 A 的运行状态（程序计数器 PC、栈指针 SP、通用寄存器等）。'
+        },
+        {
+          cpu: 'switching', label: '⚡ 切换中...',
+          threadA: 'paused', stateA: '💾 保存状态...', regsA: ['saved', 'saved', 'saved'],
+          threadB: '', stateB: '⏸ 就绪', regsB: ['', '', ''],
+          arrow: 'active', costThread: '0%', costProcess: '0%',
+          narr: '⚠️ <strong>操作系统发出切换信号！</strong>（时间片到了 / 更高优先级任务出现 / I/O 等待）<br>第一步：<strong>保存线程 A 的上下文</strong> —— 把 A 的所有寄存器值保存到内存中的 TCB（线程控制块）。'
+        },
+        {
+          cpu: 'switching', label: '⚡ 切换中...',
+          threadA: 'paused', stateA: '💤 已挂起', regsA: ['saved', 'saved', 'saved'],
+          threadB: 'active-b', stateB: '📂 恢复状态...', regsB: ['loaded', 'loaded', 'loaded'],
+          arrow: 'active', costThread: '30%', costProcess: '0%',
+          narr: '第二步：<strong>恢复线程 B 的上下文</strong> —— 从 B 的 TCB 中把之前保存的寄存器值加载回 CPU。<br>对于<strong>线程切换</strong>：只需切换寄存器和栈，因为共享同一个内存空间，速度很快。'
+        },
+        {
+          cpu: 'running-b', label: '运行 线程B',
+          threadA: 'paused', stateA: '💤 已挂起', regsA: ['saved', 'saved', 'saved'],
+          threadB: 'active-b', stateB: '🏃 运行中', regsB: ['', '', ''],
+          arrow: '', costThread: '30%', costProcess: '0%',
+          narr: '🟣 线程 B 现在拥有 CPU，开始执行！从上次暂停的地方继续，就好像从来没有被打断过一样。'
+        },
+        {
+          cpu: 'running-b', label: '运行 线程B',
+          threadA: 'paused', stateA: '💤 已挂起', regsA: ['saved', 'saved', 'saved'],
+          threadB: 'active-b', stateB: '🏃 运行中', regsB: ['', '', ''],
+          arrow: '', costThread: '30%', costProcess: '100%',
+          narr: '📊 <strong>如果换成「进程切换」呢？</strong><br>除了保存/恢复寄存器，还需要：切换<strong>页表</strong>（虚拟内存映射）、刷新 <strong>TLB 缓存</strong>、可能刷新 <strong>CPU 缓存</strong>。<br>所以进程切换比线程切换慢 <strong>10~100 倍</strong>！'
+        },
+        {
+          cpu: '', label: '空闲',
+          threadA: '', stateA: '等待开始', regsA: ['', '', ''],
+          threadB: '', stateB: '等待开始', regsB: ['', '', ''],
+          arrow: '', costThread: '30%', costProcess: '100%',
+          narr: '🎯 <strong>总结：</strong><br>线程切换快（共享内存，只换寄存器）→ 适合需要频繁切换的 I/O 任务<br>进程切换慢（独立内存，需要切换很多东西）→ 但更安全，适合 CPU 密集型任务<br>创建太多线程/进程 → 切换开销 > 并行收益 → 所以要用<strong>线程池</strong>！'
+        },
+      ];
+
+      let current = -1, autoTimer = null;
+      const cpuChip = document.getElementById('ctxCpuChip');
+      const runLabel = document.getElementById('ctxRunningLabel');
+      const narrEl = document.getElementById('ctxNarr');
+      const counterEl = document.getElementById('ctxCounter');
+      const stepBtn = document.getElementById('ctxStepBtn');
+      const autoBtn = document.getElementById('ctxAutoBtn');
+      const resetBtn = document.getElementById('ctxResetBtn');
+      const threadAEl = document.getElementById('ctxThreadA');
+      const threadBEl = document.getElementById('ctxThreadB');
+      const stateAEl = document.getElementById('ctxStateA');
+      const stateBEl = document.getElementById('ctxStateB');
+      const arrowEl = document.getElementById('ctxArrow');
+      const costThread = document.getElementById('ctxCostThread');
+      const costProcess = document.getElementById('ctxCostProcess');
+      const regAEls = [0,1,2].map(i => document.getElementById('ctxRegA' + i));
+      const regBEls = [0,1,2].map(i => document.getElementById('ctxRegB' + i));
+
+      function apply(idx) {
+        const s = steps[idx];
+        cpuChip.className = 'ctx-cpu-chip' + (s.cpu ? ' ' + s.cpu : '');
+        runLabel.textContent = s.label;
+        threadAEl.className = 'ctx-thread-box' + (s.threadA ? ' ' + s.threadA : '');
+        threadBEl.className = 'ctx-thread-box' + (s.threadB ? ' ' + s.threadB : '');
+        stateAEl.textContent = s.stateA;
+        stateBEl.textContent = s.stateB;
+        arrowEl.className = 'ctx-switch-arrow' + (s.arrow ? ' ' + s.arrow : '');
+        regAEls.forEach((el, i) => el.className = 'ctx-reg' + (s.regsA[i] ? ' ' + s.regsA[i] : ''));
+        regBEls.forEach((el, i) => el.className = 'ctx-reg' + (s.regsB[i] ? ' ' + s.regsB[i] : ''));
+        costThread.style.width = s.costThread;
+        costProcess.style.width = s.costProcess;
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        cpuChip.className = 'ctx-cpu-chip';
+        runLabel.textContent = '空闲';
+        threadAEl.className = 'ctx-thread-box'; threadBEl.className = 'ctx-thread-box';
+        stateAEl.textContent = '等待开始'; stateBEl.textContent = '等待开始';
+        arrowEl.className = 'ctx-switch-arrow';
+        regAEls.forEach(el => el.className = 'ctx-reg');
+        regBEls.forEach(el => el.className = 'ctx-reg');
+        costThread.style.width = '0%'; costProcess.style.width = '0%';
+        narrEl.innerHTML = '👆 点击「下一步」，看 CPU 在两个线程之间切换时要做哪些事情。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 2500);
+      });
+    })();
+
+    /* ===================== 6. 竞态条件步进器 ===================== */
+    (function raceDemo() {
+      const steps = [
+        {
+          counter: 0, counterClass: '',
+          panelA: '', panelB: '',
+          stepsA: ['', '', ''], stepsB: ['', '', ''],
+          valsA: ['?', '?', '?', '?'], valsB: ['?', '?', '?', '?'],
+          narr: '初始状态：共享变量 <code>counter = 0</code>。<br>线程 A 和线程 B 都要执行 <code>counter += 1</code>，期望最终结果为 <strong>2</strong>。'
+        },
+        {
+          counter: 0, counterClass: '',
+          panelA: 'active-a', panelB: '',
+          stepsA: ['current-a', '', ''], stepsB: ['', '', ''],
+          valsA: ['0', '?', '?', '?'], valsB: ['?', '?', '?', '?'],
+          narr: '🔵 <strong>线程 A 执行第 1 步：读取</strong><br>A 从内存读取 counter 的值 → 得到 <strong>0</strong>，放入自己的寄存器。'
+        },
+        {
+          counter: 0, counterClass: '',
+          panelA: '', panelB: 'active-b',
+          stepsA: ['executed', '', ''], stepsB: ['current-b', '', ''],
+          valsA: ['0', '?', '?', '?'], valsB: ['0', '?', '?', '?'],
+          narr: '🟣 <strong>线程 B 执行第 1 步：读取</strong>（切换发生了！A 还没来得及写回）<br>B 也从内存读取 counter → 同样得到 <strong>0</strong>！<br>⚠️ 问题来了：A 已经打算 +1 了，但 B 不知道！'
+        },
+        {
+          counter: 0, counterClass: '',
+          panelA: 'active-a', panelB: '',
+          stepsA: ['executed', 'current-a', ''], stepsB: ['executed', '', ''],
+          valsA: ['0', '0', '1', '?'], valsB: ['0', '?', '?', '?'],
+          narr: '🔵 <strong>线程 A 执行第 2 步：计算</strong><br>A 计算 0 + 1 = <strong>1</strong>，结果暂存在寄存器中（还没写回内存）。'
+        },
+        {
+          counter: 0, counterClass: '',
+          panelA: '', panelB: 'active-b',
+          stepsA: ['executed', 'executed', ''], stepsB: ['executed', 'current-b', ''],
+          valsA: ['0', '0', '1', '?'], valsB: ['0', '0', '1', '?'],
+          narr: '🟣 <strong>线程 B 执行第 2 步：计算</strong><br>B 也计算 0 + 1 = <strong>1</strong>。注意 B 用的也是 0，因为它<strong>第 1 步读到的就是 0</strong>。'
+        },
+        {
+          counter: 1, counterClass: 'danger',
+          panelA: 'active-a', panelB: '',
+          stepsA: ['executed', 'executed', 'conflict'], stepsB: ['executed', 'executed', ''],
+          valsA: ['0', '0', '1', '1'], valsB: ['0', '0', '1', '?'],
+          narr: '🔵 <strong>线程 A 执行第 3 步：写回</strong><br>A 把计算结果 1 写入 counter → counter = <strong>1</strong>。'
+        },
+        {
+          counter: 1, counterClass: 'danger',
+          panelA: '', panelB: 'active-b',
+          stepsA: ['executed', 'executed', 'conflict'], stepsB: ['executed', 'executed', 'conflict'],
+          valsA: ['0', '0', '1', '1'], valsB: ['0', '0', '1', '1'],
+          narr: '🟣 <strong>线程 B 执行第 3 步：写回</strong><br>B 也把 1 写入 counter → counter = <strong style="color:#dc2626">1</strong>（不是 2！）<br><br>❌ <strong>竞态条件发生！</strong>两次 +1 操作，结果只加了 1。<br>因为 B 读到的是「过时」的值，覆盖了 A 的结果。这就是为什么需要<strong>加锁</strong>！'
+        },
+      ];
+
+      let current = -1, autoTimer = null;
+      const counterVal = document.getElementById('raceCounterVal');
+      const narrEl = document.getElementById('raceNarr');
+      const counterEl = document.getElementById('raceCounter');
+      const stepBtn = document.getElementById('raceStepBtn');
+      const autoBtn = document.getElementById('raceAutoBtn');
+      const resetBtn = document.getElementById('raceResetBtn');
+      const panelA = document.getElementById('racePanelA');
+      const panelB = document.getElementById('racePanelB');
+      const stepAEls = [0,1,2].map(i => document.getElementById('raceStepA' + i));
+      const stepBEls = [0,1,2].map(i => document.getElementById('raceStepB' + i));
+
+      const valIds = {
+        valsA: [['rsA0Val'], ['rsA1Val','rsA1Res'], ['rsA2Val']],
+        valsB: [['rsB0Val'], ['rsB1Val','rsB1Res'], ['rsB2Val']],
+      };
+
+      function apply(idx) {
+        const s = steps[idx];
+        counterVal.textContent = s.counter;
+        counterVal.className = 'race-counter-val' + (s.counterClass ? ' ' + s.counterClass : '');
+        panelA.className = 'race-thread-panel' + (s.panelA ? ' ' + s.panelA : '');
+        panelB.className = 'race-thread-panel' + (s.panelB ? ' ' + s.panelB : '');
+        stepAEls.forEach((el, i) => el.className = 'race-step' + (s.stepsA[i] ? ' ' + s.stepsA[i] : ''));
+        stepBEls.forEach((el, i) => el.className = 'race-step' + (s.stepsB[i] ? ' ' + s.stepsB[i] : ''));
+
+        const aVals = s.valsA;
+        document.getElementById('rsA0Val').textContent = aVals[0];
+        document.getElementById('rsA1Val').textContent = aVals[1];
+        document.getElementById('rsA1Res').textContent = aVals[2];
+        document.getElementById('rsA2Val').textContent = aVals[3];
+
+        const bVals = s.valsB;
+        document.getElementById('rsB0Val').textContent = bVals[0];
+        document.getElementById('rsB1Val').textContent = bVals[1];
+        document.getElementById('rsB1Res').textContent = bVals[2];
+        document.getElementById('rsB2Val').textContent = bVals[3];
+
+        narrEl.innerHTML = s.narr;
+        counterEl.textContent = `第 ${idx + 1} / ${steps.length} 步`;
+        stepBtn.disabled = idx >= steps.length - 1;
+      }
+
+      function reset() {
+        clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放';
+        current = -1;
+        counterVal.textContent = '0';
+        counterVal.className = 'race-counter-val';
+        panelA.className = 'race-thread-panel'; panelB.className = 'race-thread-panel';
+        stepAEls.forEach(el => el.className = 'race-step');
+        stepBEls.forEach(el => el.className = 'race-step');
+        ['rsA0Val','rsA1Val','rsA1Res','rsA2Val','rsB0Val','rsB1Val','rsB1Res','rsB2Val'].forEach(id => {
+          document.getElementById(id).textContent = '?';
+        });
+        narrEl.innerHTML = '👆 点击「下一步」，看两个线程同时执行 <code>counter += 1</code> 时会发生什么。<br>注意：<code>counter += 1</code> 看起来是一行代码，但底层其实是<strong>三步操作</strong>（读取→计算→写回）。';
+        counterEl.textContent = `第 0 / ${steps.length} 步`;
+        stepBtn.disabled = false;
+      }
+
+      stepBtn.addEventListener('click', () => { if (current < steps.length - 1) { current++; apply(current); } });
+      resetBtn.addEventListener('click', reset);
+      autoBtn.addEventListener('click', () => {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; return; }
+        autoBtn.textContent = '⏸ 暂停';
+        autoTimer = setInterval(() => {
+          if (current < steps.length - 1) { current++; apply(current); }
+          else { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ 自动播放'; }
+        }, 2200);
+      });
+    })();
+
+    /* ===================== 7. 线程 vs 进程对比 ===================== */
+    (function tpDemo() {
+      const runBtn = document.getElementById('tpRunBtn');
+      const taskSelect = document.getElementById('tpTaskType');
+      const logBox = document.getElementById('tpLog');
+      const tTimerEl = document.getElementById('tpThreadTimer');
+      const pTimerEl = document.getElementById('tpProcessTimer');
+
+      function addLog(html) {
+        const div = document.createElement('div');
+        div.className = 'log-line';
+        div.innerHTML = html;
+        logBox.appendChild(div);
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      function resetWorkers() {
+        for (let i = 0; i < 3; i++) {
+          ['tw', 'pw'].forEach(prefix => {
+            const w = document.getElementById(prefix[0] + 'w' + i);
+            if (w) w.className = 'tp-worker';
+            const f = document.getElementById(prefix + 'f' + i);
+            if (f) f.style.width = '0%';
+          });
+        }
+        tTimerEl.textContent = '0.0s';
+        pTimerEl.textContent = '0.0s';
+      }
+
+      async function run() {
+        resetWorkers();
+        logBox.innerHTML = '';
+        runBtn.disabled = true;
+        const isIO = taskSelect.value === 'io';
+
+        addLog(`<span class="log-info">📋 任务类型：${isIO ? 'I/O 密集（网络请求）' : 'CPU 密集（数学计算）'}</span>`);
+        addLog(`<span class="log-info">─────────────────────</span>`);
+
+        const threadTasks = [
+          { name: '任务1', time: isIO ? 1000 : 2000 },
+          { name: '任务2', time: isIO ? 1500 : 2000 },
+          { name: '任务3', time: isIO ? 800 : 2000 },
+        ];
+
+        const tStart = performance.now();
+        const tInterval = setInterval(() => {
+          tTimerEl.textContent = ((performance.now() - tStart) / 1000).toFixed(1) + 's';
+        }, 100);
+
+        if (isIO) {
+          addLog('<span class="log-event">🧵 [多线程] I/O 密集 → GIL 在等待时释放，三个线程并行等待</span>');
+          const threadProms = threadTasks.map((t, i) => (async () => {
+            document.getElementById('tw' + i).className = 'tp-worker active';
+            const fill = document.getElementById('twf' + i);
+            const steps = 20;
+            for (let s = 1; s <= steps; s++) {
+              await new Promise(r => setTimeout(r, t.time / steps));
+              fill.style.width = (s / steps * 100) + '%';
+            }
+            document.getElementById('tw' + i).className = 'tp-worker done';
+            addLog(`<span class="log-done">  ✅ 线程 ${t.name} 完成</span>`);
+          })());
+          await Promise.all(threadProms);
+        } else {
+          addLog('<span class="log-event">🧵 [多线程] CPU 密集 → GIL 限制，线程交替执行（无加速）</span>');
+          for (let i = 0; i < threadTasks.length; i++) {
+            const t = threadTasks[i];
+            document.getElementById('tw' + i).className = 'tp-worker active';
+            const fill = document.getElementById('twf' + i);
+            const steps = 20;
+            for (let s = 1; s <= steps; s++) {
+              await new Promise(r => setTimeout(r, t.time / steps));
+              fill.style.width = (s / steps * 100) + '%';
+            }
+            document.getElementById('tw' + i).className = 'tp-worker done';
+            addLog(`<span class="log-done">  ✅ 线程 ${t.name} 完成</span>`);
+          }
+        }
+        clearInterval(tInterval);
+        tTimerEl.textContent = ((performance.now() - tStart) / 1000).toFixed(1) + 's';
+
+        addLog(`<span class="log-info">─────────────────────</span>`);
+
+        const pStart = performance.now();
+        const pInterval = setInterval(() => {
+          pTimerEl.textContent = ((performance.now() - pStart) / 1000).toFixed(1) + 's';
+        }, 100);
+
+        addLog('<span class="log-event">⚙️ [多进程] 每个进程独立运行，不受 GIL 限制</span>');
+        const processProms = threadTasks.map((t, i) => (async () => {
+          document.getElementById('pw' + i).className = 'tp-worker active';
+          const fill = document.getElementById('pwf' + i);
+          const actualTime = isIO ? t.time : t.time / 3;
+          const steps = 20;
+          for (let s = 1; s <= steps; s++) {
+            await new Promise(r => setTimeout(r, actualTime / steps));
+            fill.style.width = (s / steps * 100) + '%';
+          }
+          document.getElementById('pw' + i).className = 'tp-worker done';
+          addLog(`<span class="log-done">  ✅ 进程 ${t.name} 完成</span>`);
+        })());
+        await Promise.all(processProms);
+
+        clearInterval(pInterval);
+        pTimerEl.textContent = ((performance.now() - pStart) / 1000).toFixed(1) + 's';
+
+        addLog(`<span class="log-info">─────────────────────</span>`);
+        if (isIO) {
+          addLog('<span class="log-info">💡 I/O 密集型：多线程和多进程速度差不多，因为瓶颈在 I/O 等待</span>');
+        } else {
+          addLog('<span class="log-info">💡 CPU 密集型：多进程明显更快！多线程因 GIL 无法加速</span>');
+        }
+        runBtn.disabled = false;
+      }
+
+      runBtn.addEventListener('click', run);
+    })();
+
+    /* ===================== 5. 线程池可视化 ===================== */
+    (function poolDemo() {
+      const runBtn = document.getElementById('poolRunBtn');
+      const resetBtn = document.getElementById('poolResetBtn');
+      const workerCountSel = document.getElementById('poolWorkerCount');
+      const queueEl = document.getElementById('poolQueue');
+      const workersEl = document.getElementById('poolWorkers');
+      const doneEl = document.getElementById('poolDone');
+      const timerVal = document.getElementById('poolTimerVal');
+      const timerStatus = document.getElementById('poolTimerStatus');
+
+      const tasks = [
+        { name: 'GET /users', time: 1200 },
+        { name: 'GET /posts', time: 2000 },
+        { name: 'GET /comments', time: 1500 },
+        { name: 'GET /albums', time: 800 },
+        { name: 'GET /photos', time: 1800 },
+        { name: 'GET /todos', time: 1000 },
+      ];
+
+      function buildUI() {
+        const count = parseInt(workerCountSel.value);
+        queueEl.innerHTML = '';
+        tasks.forEach((t, i) => {
+          const div = document.createElement('div');
+          div.className = 'pool-queue-item';
+          div.id = 'pq' + i;
+          div.textContent = t.name;
+          queueEl.appendChild(div);
+        });
+
+        workersEl.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+          workersEl.innerHTML += `
+            <div class="pool-worker-card idle-state" id="pWorker${i}">
+              <div class="pool-worker-icon">🧵</div>
+              <div class="pool-worker-name">Worker ${i + 1}</div>
+              <div class="pool-worker-task" id="pWorkerTask${i}">空闲</div>
+              <div class="pool-worker-bar"><div class="pool-worker-fill" id="pWorkerFill${i}"></div></div>
+            </div>`;
+        }
+
+        doneEl.innerHTML = '';
+        timerVal.textContent = '0.0s';
+        timerStatus.className = 'timer-status waiting';
+        timerStatus.textContent = '等待开始';
+      }
+
+      buildUI();
+      workerCountSel.addEventListener('change', buildUI);
+
+      async function run() {
+        buildUI();
+        runBtn.disabled = true;
+        timerStatus.className = 'timer-status running';
+        timerStatus.textContent = '运行中';
+
+        const workerCount = parseInt(workerCountSel.value);
+        const t0 = performance.now();
+        const timerInterval = setInterval(() => {
+          timerVal.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's';
+        }, 100);
+
+        let taskIdx = 0;
+        const workerBusy = new Array(workerCount).fill(false);
+
+        function findFreeWorker() {
+          return workerBusy.indexOf(false);
+        }
+
+        async function assignTask(wIdx, tIdx) {
+          workerBusy[wIdx] = true;
+          const task = tasks[tIdx];
+          const qItem = document.getElementById('pq' + tIdx);
+          const wCard = document.getElementById('pWorker' + wIdx);
+          const wTask = document.getElementById('pWorkerTask' + wIdx);
+          const wFill = document.getElementById('pWorkerFill' + wIdx);
+
+          qItem.className = 'pool-queue-item picked';
+          await new Promise(r => setTimeout(r, 200));
+          qItem.className = 'pool-queue-item gone';
+
+          wCard.className = 'pool-worker-card busy';
+          wTask.textContent = task.name;
+          wFill.style.width = '0%';
+
+          const steps = 20;
+          for (let s = 1; s <= steps; s++) {
+            await new Promise(r => setTimeout(r, task.time / steps));
+            wFill.style.width = (s / steps * 100) + '%';
+          }
+
+          const doneItem = document.createElement('div');
+          doneItem.className = 'pool-done-item';
+          doneItem.textContent = '✅ ' + task.name;
+          doneEl.appendChild(doneItem);
+
+          wCard.className = 'pool-worker-card idle-state';
+          wTask.textContent = '空闲';
+          wFill.style.width = '0%';
+          workerBusy[wIdx] = false;
+        }
+
+        const allDone = new Promise(resolve => {
+          let completed = 0;
+          function tryAssign() {
+            while (taskIdx < tasks.length) {
+              const w = findFreeWorker();
+              if (w === -1) break;
+              const t = taskIdx++;
+              assignTask(w, t).then(() => {
+                completed++;
+                if (completed >= tasks.length) { resolve(); return; }
+                tryAssign();
+              });
+            }
+          }
+          tryAssign();
+        });
+
+        await allDone;
+        clearInterval(timerInterval);
+        timerVal.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's';
+        timerStatus.className = 'timer-status finished';
+        timerStatus.textContent = '完成';
+        runBtn.disabled = false;
+      }
+
+      function resetAll() {
+        buildUI();
+      }
+
+      runBtn.addEventListener('click', run);
+      resetBtn.addEventListener('click', resetAll);
+    })();
+
+  })();
+  </script>
+</body>
+
+</html>
