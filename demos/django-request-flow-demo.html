@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Django 请求全流程演示</title>
+<style>
+:root{--bg:#0f1117;--sf:#1a1d27;--sf2:#22263a;--bd:#2e3350;--pr:#4ea980;--prg:rgba(78,169,128,.25);--ac:#7dc9a8;--tx:#e2e8f0;--ts:#94a3b8;--tm:#64748b;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding:32px 20px}
+.page-title{text-align:center;margin-bottom:40px}
+.page-title h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,#4ea980,#7dc9a8,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.page-title p{color:var(--ts);font-size:14px}
+.flow-container{max-width:860px;margin:0 auto;display:flex;flex-direction:column}
+.step{display:flex;gap:20px;opacity:.35;transition:opacity .4s}
+.step.active{opacity:1}
+.step.done{opacity:.75}
+.step-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:48px}
+.step-dot{width:48px;height:48px;border-radius:50%;background:var(--sf2);border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;transition:all .4s;position:relative;z-index:1}
+.step.active .step-dot{border-color:var(--pr);background:var(--prg);box-shadow:0 0 20px var(--prg);animation:pulse 2s infinite}
+.step.done .step-dot{border-color:var(--pr);background:var(--pr)}
+@keyframes pulse{0%,100%{box-shadow:0 0 10px var(--prg)}50%{box-shadow:0 0 28px rgba(78,169,128,.5)}}
+.connector{flex:1;width:2px;background:var(--bd);margin:4px 0;min-height:24px;transition:background .4s;position:relative}
+.connector.lit{background:linear-gradient(180deg,var(--pr),var(--ac))}
+.connector.active-line::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:6px;height:100%;background:linear-gradient(180deg,transparent,var(--pr),transparent);border-radius:3px;animation:flow-down 1s linear infinite}
+@keyframes flow-down{0%{transform:translateX(-50%) translateY(-100%);opacity:0}20%{opacity:1}80%{opacity:1}100%{transform:translateX(-50%) translateY(200%);opacity:0}}
+.step-body{flex:1;padding-bottom:28px}
+.step-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:18px 20px;transition:all .4s}
+.step.active .step-card{border-color:var(--pr);background:linear-gradient(135deg,var(--sf),#1a2a22);box-shadow:0 4px 24px var(--prg)}
+.step.done .step-card{border-color:rgba(78,169,128,.3)}
+.step-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.step-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+.step-title{font-size:16px;font-weight:600}
+.step.active .step-title{color:var(--ac)}
+.step-desc{font-size:13.5px;color:var(--ts);line-height:1.75;margin-bottom:10px}
+.step-code{background:#0d1117;border:1px solid var(--bd);border-radius:8px;padding:12px 14px;font-family:'Consolas','Fira Code',monospace;font-size:12.5px;line-height:1.7;color:#a8c7a0;white-space:pre;overflow-x:auto;display:none}
+.step.active .step-code,.step.done .step-code{display:block}
+.kw{color:#c792ea}.fn{color:#82aaff}.str{color:#c3e88d}.cm{color:#546e7a;font-style:italic}.cls{color:#ffcb6b}.attr{color:#f78c6c}
+.packet{display:inline-flex;align-items:center;gap:6px;background:var(--sf2);border:1px solid var(--bd);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--ts);margin-top:8px}
+.packet-dot{width:7px;height:7px;border-radius:50%;background:var(--pr)}
+.step.active .packet{border-color:var(--pr);color:var(--ac);animation:blink 1.2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.controls{max-width:860px;margin:16px auto 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.btn{padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:6px}
+.btn-primary{background:var(--pr);color:#fff}
+.btn-primary:hover{background:var(--ac);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--sf2);color:var(--ts);border:1px solid var(--bd)}
+.btn-secondary:hover{background:var(--bd);color:var(--tx)}
+.btn-auto{background:transparent;color:#f59e0b;border:1px solid #f59e0b}
+.btn-auto:hover{background:rgba(245,158,11,.1)}
+.btn-auto.running{background:rgba(245,158,11,.15)}
+.step-counter{margin-left:auto;font-size:13px;color:var(--tm)}
+.step-counter span{color:var(--pr);font-weight:700}
+.response-box{max-width:860px;margin:24px auto 0;background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:20px 24px;display:none}
+.response-box.show{display:block;animation:slide-up .4s ease}
+@keyframes slide-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.response-title{font-size:14px;font-weight:700;color:var(--pr);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.response-preview{background:#0d1117;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;line-height:1.7;color:#a8c7a0}
+.tag-client{background:rgba(96,165,250,.15);color:#60a5fa}
+.tag-server{background:rgba(167,139,250,.15);color:#a78bfa}
+.tag-url{background:rgba(245,158,11,.15);color:#f59e0b}
+.tag-view{background:rgba(78,169,128,.15);color:#4ea980}
+.tag-db{background:rgba(248,113,113,.15);color:#f87171}
+.tag-template{background:rgba(251,191,36,.15);color:#fbbf24}
+.tag-response{background:rgba(52,211,153,.15);color:#34d399}
+</style>
+</head>
+<body>
+<div class="page-title">
+  <h1>Django 请求全流程演示</h1>
+  <p>点击「下一步」逐步追踪一条 HTTP 请求从浏览器到 Django 服务器再返回响应的完整链路</p>
+</div>
+<div class="flow-container" id="flowContainer">
+
+<div class="step" id="step-0">
+  <div class="step-line"><div class="step-dot">🌐</div><div class="connector" id="conn-0"></div></div>
+  <div class="step-body"><div class="step-card">
+    <div class="step-header"><span class="step-tag tag-client">客户端</span><span class="step-title">用户在浏览器发起 HTTP 请求</span></div>
+    <div class="step-desc">用户在浏览器地址栏输入 URL，或点击页面上的链接，浏览器随即发起一个 HTTP GET/POST 请求，并附带请求头（Headers）、Cookie、请求体（Body）等信息。</div>
+    <pre class="step-code"><span class="cm"># 浏览器发出的 HTTP 请求报文</span>
+GET /blog/post/5/ HTTP/1.1
+Host: www.example.com
+Accept: text/html
+Cookie: sessionid=abc123
+User-Agent: Mozilla/5.0</pre>
+    <div class="packet"><div class="packet-dot"></div>HTTP Request → www.example.com/blog/post/5/</div>
+  </div></div>
+</div>
+
+<div class="step" id="step-1">
+  <div class="step-line"><div class="step-dot">⚙️</div><div class="connector" id="conn-1"></div></div>
+  <div class="step-body"><div class="step-card">
+    <div class="step-header"><span class="step-tag tag-server">Django 服务器</span><span class="step-title">WSGI / ASGI 接收并封装请求</span></div>
+    <div class="step-desc">Django 通过 WSGI（同步）或 ASGI（异步）服务器接收原始 HTTP 请求，将其封装成 <code style="color:#4ea980">HttpRequest</code> 对象，该对象包含了请求的所有信息。</div>
+    <pre class="step-code"><span class="cm"># Django 将请求封装为 HttpRequest 对象</span>
+request.method    <span class="cm"># 'GET' 或 'POST'</span>
+request.path      <span class="cm"># '/blog/post/5/'</span>
+request.GET       <span class="cm"># 查询参数 QueryDict</span>
+request.POST      <span class="cm"># POST 数据 QueryDict</span>
+request.user      <span class="cm"># 当前登录用户</span>
+request.COOKIES   <span class="cm"># Cookie 字典</span>
+request.session   <span class="cm"># Session 数据</span></pre>
+    <div class="packet"><div class="packet-dot"></div>HttpRequest 对象已创建</div>
+  </div></div>
+</div>
+
+<div class="step" id="step-2">
+  <div class="step-line"><div class="step-dot">🔒</div><div class="connector" id="conn-2"></div></div>
+  <div class="step-body"><div class="step-card">
+    <div class="step-header"><span class="step-tag tag-server">中间件</span><span class="step-title">Middleware 请求阶段处理</span></div>
+    <div class="step-desc">请求依次经过 <code style="color:#4ea980">settings.py</code> 中配置的中间件列表（从上到下）。每个中间件可以对请求进行预处理，例如身份认证、Session 解析、CSRF 验证等。</div>
+    <pre class="step-code"><span class="cm"># settings.py 中的中间件配置</span>
+MIDDLEWARE = [
+    <span class="str">'django.middleware.security.SecurityMiddleware'</span>,
+    <span class="str">'django.contrib.sessions.middleware.SessionMiddleware'</span>,
+    <span class="str">'django.middleware.csrf.CsrfViewMiddleware'</span>,
+    <span class="str">'django.contrib.auth.middleware.AuthenticationMiddleware'</span>,
+    <span class="str">'django.contrib.messages.middleware.MessageMiddleware'</span>,
+]</pre>
+    <div class="packet"><div 

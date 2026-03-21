@@ -6,6 +6,360 @@
   <title>第三节课 | 西南科技大学蓝鲸Sass开发课程</title>
   <link rel="stylesheet" href="../assets/css/main.css" />
   <script defer src="../assets/js/main.js"></script>
+  <style>
+    .exercise-block { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+    .exercise-block h4 { color: #166534; font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .exercise-block h4::before { display: none; }
+    .exercise-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .exercise-list li { background: #fff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; font-size: 14px; line-height: 1.6; position: relative; padding-left: 40px; }
+    .exercise-list li::before { content: attr(data-num); position: absolute; left: 12px; top: 12px; background: #16a34a; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    .exercise-list li .hint { display: block; color: #6b7280; font-size: 12px; margin-top: 4px; font-style: italic; }
+    .exercise-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-right: 6px; }
+    .tag-easy { background: #dcfce7; color: #166534; }
+    .tag-medium { background: #fef9c3; color: #854d0e; }
+    .tag-hard { background: #fee2e2; color: #991b1b; }
+    .request-flow {
+      margin: 24px 0 36px;
+      padding: 28px;
+      border-radius: 20px;
+      border: 1.5px solid #86efac;
+      background:
+        radial-gradient(circle at top left, rgba(34, 197, 94, 0.12), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(134, 239, 172, 0.16), transparent 34%),
+        linear-gradient(180deg, #f7fff8 0%, #f0fdf4 100%);
+      box-shadow: 0 18px 40px rgba(22, 101, 52, 0.08);
+      overflow: hidden;
+    }
+    .request-flow__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+    .request-flow__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #166534;
+    }
+    .request-flow__eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.14);
+    }
+    .request-flow h4 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+      color: #166534;
+    }
+    .request-flow__intro {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.7;
+    }
+    .request-flow__controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .request-flow__btn {
+      appearance: none;
+      border: 1px solid #86efac;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #166534;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .request-flow__btn:hover {
+      transform: translateY(-1px);
+      border-color: #16a34a;
+      box-shadow: 0 10px 20px rgba(34, 197, 94, 0.14);
+    }
+    .request-flow__btn.is-running {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      border-color: transparent;
+      color: #fff;
+    }
+    .request-flow__layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.95fr);
+      gap: 20px;
+      align-items: start;
+    }
+    .request-flow__canvas {
+      position: relative;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid #bbf7d0;
+    }
+    .request-flow__zones {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 0.82fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .request-flow__zone {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px dashed #86efac;
+      background: rgba(240, 253, 244, 0.96);
+    }
+    .request-flow__zone h5 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      color: #166534;
+    }
+    .request-flow__zone p {
+      margin: 0;
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+    .request-flow__line {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 12px;
+      align-items: center;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+    .request-flow__step {
+      appearance: none;
+      width: 100%;
+      text-align: left;
+      border: 1px solid #bbf7d0;
+      border-radius: 18px;
+      background: #fff;
+      padding: 14px;
+      min-height: 152px;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .request-flow__step:hover {
+      transform: translateY(-2px);
+      border-color: #86efac;
+    }
+    .request-flow__step.is-active {
+      border-color: #16a34a;
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+      box-shadow: 0 18px 36px rgba(34, 197, 94, 0.16);
+    }
+    .request-flow__step.is-complete {
+      border-color: #86efac;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fee7 100%);
+    }
+    .request-flow__step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .request-flow__step-title {
+      display: block;
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #166534;
+    }
+    .request-flow__step-subtitle {
+      display: block;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .request-flow__step-meta {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 12px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .request-flow__arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #16a34a;
+      font-size: 22px;
+      font-weight: 800;
+      min-width: 24px;
+    }
+    .request-flow__step-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 24px;
+      gap: 8px;
+      align-items: center;
+    }
+    .request-flow__step-wrap:last-child {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .request-flow__detail {
+      padding: 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.96);
+      color: #374151;
+      border: 1px solid #bbf7d0;
+      box-shadow: 0 18px 36px rgba(22, 101, 52, 0.08);
+    }
+    .request-flow__detail-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .request-flow__detail-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #166534;
+    }
+    .request-flow__progress {
+      flex: 1;
+      height: 8px;
+      border-radius: 999px;
+      background: #dcfce7;
+      overflow: hidden;
+    }
+    .request-flow__progress span {
+      display: block;
+      height: 100%;
+      width: 16.66%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      transition: width 0.25s ease;
+    }
+    .request-flow__detail h5 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+      color: #166534;
+    }
+    .request-flow__detail p {
+      margin: 0 0 16px;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+    .request-flow__signal {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+    }
+    .request-flow__signal-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #166534;
+    }
+    .request-flow__signal code {
+      font-size: 13px;
+      color: #166534;
+      word-break: break-word;
+    }
+    .request-flow__bullets {
+      margin: 0 0 16px;
+      padding-left: 18px;
+      color: #4b5563;
+    }
+    .request-flow__bullets li + li {
+      margin-top: 8px;
+    }
+    .request-flow__note {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f7fee7;
+      color: #166534;
+      font-size: 13px;
+      line-height: 1.7;
+      border: 1px solid #bbf7d0;
+    }
+    .request-flow__legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .request-flow__legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .request-flow__legend-item::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--legend-color);
+      box-shadow: 0 0 0 4px rgba(134, 239, 172, 0.3);
+    }
+    .request-flow__legend-item--client { --legend-color: #22c55e; }
+    .request-flow__legend-item--server { --legend-color: #16a34a; }
+    .request-flow__legend-item--database { --legend-color: #15803d; }
+    .request-flow__legend-item--template { --legend-color: #86efac; }
+    @media (max-width: 1024px) {
+      .request-flow__header,
+      .request-flow__layout {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+      .request-flow__controls {
+        justify-content: flex-start;
+      }
+      .request-flow__zones {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 768px) {
+      .request-flow {
+        padding: 20px;
+      }
+      .request-flow__line {
+        grid-template-columns: repeat(6, minmax(210px, 1fr));
+      }
+      .request-flow__step {
+        min-height: 136px;
+      }
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -21,19 +375,789 @@
   <main class="container course-layout">
     <div class="breadcrumb"><a href="../index.html">首页</a> / 第三节课</div>
     <article class="panel">
-      <h1>第三节课</h1>
-      <div class="meta">课程主题：</div>
+      <h1>第三节课 - Django是什么</h1>
+
+      <h2>课程概述</h2>
+      <p>Django 是一个高级 Python Web 框架，鼓励快速开发和简洁、务实的设计。由经验丰富的开发者打造，它解决了网页开发的大部分麻烦，让你可以专注于写应用，无需重新发明轮子。</p>
+      <p><strong>官方网站：</strong><a href="https://www.djangoproject.com/" target="_blank">https://www.djangoproject.com/</a></p>
+
+      <h2>Django 的安装以及第一个项目</h2>
+      <h3>1. 环境准备</h3>
+      <ol>
+        <li>使用 <code>uv init --python 3.11.10</code> 创建 uv 环境</li>
+        <li>下载 Django：<code>uv add django</code></li>
+        <li>进入虚拟环境：<code>.venv\Scripts\activate</code></li>
+        <li>创建一个名叫 <code>blog_project</code> 的项目</li>
+        <li>运行服务器：<code>python manage.py runserver</code></li>
+      </ol>
+      <div class="tip-block">✓ 成功安装后，访问 http://localhost:8000 会看到 Django 欢迎页面</div>
+
+      <h2>Django 的 MTV 设计模式</h2>
+      <h3>2.1 经典的 MVC 设计模式</h3>
+      <p>MVC 即 Model-View-Controller（模型-视图-控制器），是经典的软件开发设计模式。</p>
+      <div class="compare-table">
+        <table>
+          <thead><tr><th>组件</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Model（模型）</strong></td><td>数据模型。模型不是数据本身，而是抽象的描述数据的构成和逻辑关系。通常模型包括了数据表的各个字段和相互关系。Web 开发框架会根据模型的定义来自动生成数据表。</td></tr>
+            <tr><td><strong>View（视图）</strong></td><td>主要用于显示数据，用来展示用户可以看到的内容或提供用户可以输入或操作的界面。数据来源于数据库，用户输入的数据给控制器。</td></tr>
+            <tr><td><strong>Controller（控制器）</strong></td><td>应用程序中处理用户交互的部分。通常控制器负责从视图读取数据，控制用户输入，并向模型发送数据。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>MVC 的比喻：</strong>如果把 MVC 比喻成一个粽子，那么 View 就是最外面一层的绿色玉米叶，是吃货们可以直接看到的。Controller 就是中间那层熟糯米，而粽子的核心自然是最里面那一层的肉馅 Model 模型了。</p>
+
+      <h3>2.2 Django 的 MVT 设计模式</h3>
+      <p>Django 的 MVT 设计模式由 Model（模型）、View（视图）和 Template（模板）三部分组成，分别对应单个 app 目录下的 <code>models.py</code>、<code>views.py</code> 和 <code>templates</code> 文件夹。</p>
+      <div class="compare-table">
+        <table>
+          <thead><tr><th>Django MVT</th><th>经典 MVC</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Model</strong></td><td>Model</td><td>这个与经典 MVC 模式下的模型 Model 差不多。</td></tr>
+            <tr><td><strong>View</strong></td><td>Controller</td><td>这个与 MVC 下的控制器 Controller 更像。视图不仅负责根据用户请求从数据库读取数据、指定向用户展示数据的方式，还可以指定渲染模板并处理用户提交的数据。</td></tr>
+            <tr><td><strong>Template</strong></td><td>View</td><td>这个与经典 MVC 模式下的视图 View 一致。模板用来呈现 Django view 传来的数据，也决定了用户界面的外观。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>2.3 Django MVT 工作流程</h3>
+      <p>Django MVT 设计模式中最重要的是视图（view），因为它同时与模型（model）和模板（templates）进行交互。当用户发来一个请求（request）时，Django 会对请求头信息进行解析，解析出用户需要访问的 URL 地址，然后根据路由 <code>urls.py</code> 中的定义的对应关系把请求转发到相应的视图处理。视图会从数据库读取需要的数据，指定渲染模板，最后返回响应数据。</p>
+      <div class="tip-block">💡 <strong>工作流程：</strong>用户请求 → URL 路由 → 视图处理 → 数据库查询 → 模板渲染 → 返回响应</div>
+      <section class="request-flow" aria-labelledby="request-flow-title">
+        <div class="request-flow__header">
+          <div>
+            <p class="request-flow__eyebrow">交互流程演示</p>
+            <h4 id="request-flow-title">请求发送到服务器，再到响应返回浏览器的完整过程</h4>
+            <p class="request-flow__intro">点击任意节点或使用下面的按钮，可以一步一步查看 Django 如何接住浏览器请求、分发到视图、查询数据、渲染模板并返回响应。</p>
+          </div>
+          <div class="request-flow__controls" aria-label="流程控制">
+            <button class="request-flow__btn" type="button" data-flow-action="prev">上一步</button>
+            <button class="request-flow__btn" type="button" data-flow-action="next">下一步</button>
+            <button class="request-flow__btn" type="button" data-flow-action="autoplay">自动播放</button>
+            <button class="request-flow__btn" type="button" data-flow-action="reset">重置</button>
+          </div>
+        </div>
+
+        <div class="request-flow__layout" data-request-flow>
+          <div class="request-flow__canvas">
+            <div class="request-flow__zones" aria-hidden="true">
+              <div class="request-flow__zone">
+                <h5>浏览器</h5>
+                <p>用户输入网址、点击链接或提交表单，发起 HTTP 请求。</p>
+              </div>
+              <div class="request-flow__zone">
+                <h5>Django 服务器</h5>
+                <p>URL 路由、视图函数、模型 ORM 和模板系统都在这里协同工作。</p>
+              </div>
+              <div class="request-flow__zone">
+                <h5>返回页面</h5>
+                <p>服务器把渲染后的 HTML 或 JSON 等响应数据回传给浏览器。</p>
+              </div>
+            </div>
+
+            <div class="request-flow__line" role="list" aria-label="Django 请求响应流程图">
+              <div class="request-flow__step-wrap">
+                <button class="request-flow__step is-active" type="button" role="listitem" data-step-index="0"
+                  data-step-title="1. 浏览器发起请求"
+                  data-step-description="用户在浏览器输入网址、点击导航链接，或者提交表单后，浏览器会把请求地址、请求方法和请求参数一并发送给 Django 服务器。"
+                  data-step-signal="GET /posts/?page=1 HTTP/1.1"
+                  data-step-note="这是完整流程的起点，请求还没有进入业务逻辑，浏览器此时只是把“我要访问什么资源”表达清楚。"
+                  data-step-points="浏览器会带上 URL、请求方法和请求头|如果是表单提交，还可能附带 POST 数据或上传文件|请求先到达 Web 服务器，再交给 Django 处理">
+                  <span class="request-flow__step-number">01</span>
+                  <strong class="request-flow__step-title">浏览器发起请求</strong>
+                  <span class="request-flow__step-subtitle">用户访问页面或提交表单，浏览器发送 HTTP Request。</span>
+                  <span class="request-flow__step-meta">客户端</span>
+                </button>
+                <div class="request-flow__arrow" aria-hidden="true">→</div>
+              </div>
+
+              <div class="request-flow__step-wrap">
+                <button class="request-flow__step" type="button" role="listitem" data-step-index="1"
+                  data-step-title="2. URL 路由匹配"
+                  data-step-description="Django 会先检查 <code>urls.py</code> 中配置的路由规则，看看当前请求的路径应该交给哪个视图函数或视图类来处理。"
+                  data-step-signal="path('posts/', views.post_list, name='post_list')"
+                  data-step-note="如果路由没有匹配成功，Django 通常会返回 404 页面，所以路由是请求进入业务代码前的第一道入口。"
+                  data-step-points="Django 逐条匹配 URL 模式|匹配成功后定位到对应 view|路由还可以提取参数，如文章 id、slug 等">
+                  <span class="request-flow__step-number">02</span>
+                  <strong class="request-flow__step-title">URL 路由分发</strong>
+                  <span class="request-flow__step-subtitle">`urls.py` 判断这个请求应该交给哪个视图处理。</span>
+                  <span class="request-flow__step-meta">服务器入口</span>
+                </button>
+                <div class="request-flow__arrow" aria-hidden="true">→</div>
+              </div>
+
+              <div class="request-flow__step-wrap">
+                <button class="request-flow__step" type="button" role="listitem" data-step-index="2"
+                  data-step-title="3. View 处理业务逻辑"
+                  data-step-description="匹配到视图后，Django 会把请求对象 <code>request</code> 传入视图。视图开始读取参数、执行业务判断，并决定是否需要查询数据库或渲染模板。"
+                  data-step-signal="def post_list(request): ..."
+                  data-step-note="在 Django 里，View 更像 MVC 里的 Controller，它负责串联请求、数据和页面响应。"
+                  data-step-points="视图会读取 request.GET、request.POST 等信息|可以做登录校验、参数校验、权限判断|随后决定返回 JSON、重定向或 HTML 页面">
+                  <span class="request-flow__step-number">03</span>
+                  <strong class="request-flow__step-title">View 处理请求</strong>
+                  <span class="request-flow__step-subtitle">视图拿到 `request` 后开始执行业务逻辑。</span>
+                  <span class="request-flow__step-meta">业务控制</span>
+                </button>
+                <div class="request-flow__arrow" aria-hidden="true">→</div>
+              </div>
+
+              <div class="request-flow__step-wrap">
+                <button class="request-flow__step" type="button" role="listitem" data-step-index="3"
+                  data-step-title="4. Model / ORM 查询数据库"
+                  data-step-description="如果页面需要数据，视图就会调用模型或 ORM 去数据库查询，把文章、用户、分类等业务数据取出来，再准备交给模板或接口响应。"
+                  data-step-signal="posts = Post.objects.all()"
+                  data-step-note="Model 表示数据结构，ORM 负责把 Python 代码转成 SQL 查询，让我们可以更直观地操作数据库。"
+                  data-step-points="模型定义了表结构和字段关系|ORM 会生成对应 SQL 并访问数据库|查询结果会回到视图中，通常是 QuerySet 或模型实例">
+                  <span class="request-flow__step-number">04</span>
+                  <strong class="request-flow__step-title">Model / ORM 查库</strong>
+                  <span class="request-flow__step-subtitle">视图从数据库读取业务数据，为页面展示做准备。</span>
+                  <span class="request-flow__step-meta">数据层</span>
+                </button>
+                <div class="request-flow__arrow" aria-hidden="true">→</div>
+              </div>
+
+              <div class="request-flow__step-wrap">
+                <button class="request-flow__step" type="button" role="listitem" data-step-index="4"
+                  data-step-title="5. Template 渲染页面"
+                  data-step-description="拿到数据后，视图通常会把上下文数据传给模板，由模板把变量填充进 HTML 结构里，最终生成浏览器能直接展示的页面内容。"
+                  data-step-signal="return render(request, 'blog/post_list.html', {'posts': posts})"
+                  data-step-note="如果接口型页面返回的是 JSON，那么这一步可以跳过模板，直接构造 JsonResponse。"
+                  data-step-points="模板负责显示数据，不负责复杂业务逻辑|模板中可使用变量、循环和条件语句|渲染完成后会得到完整 HTML 字符串">
+                  <span class="request-flow__step-number">05</span>
+                  <strong class="request-flow__step-title">Template 渲染</strong>
+                  <span class="request-flow__step-subtitle">模板把数据嵌入 HTML，生成最终页面内容。</span>
+                  <span class="request-flow__step-meta">表现层</span>
+                </button>
+                <div class="request-flow__arrow" aria-hidden="true">→</div>
+              </div>
+
+              <div class="request-flow__step-wrap">
+                <button class="request-flow__step" type="button" role="listitem" data-step-index="5"
+                  data-step-title="6. 服务器返回响应"
+                  data-step-description="Django 视图把处理结果封装成响应对象后返回给浏览器，浏览器收到 HTML、JSON、状态码等响应数据，再渲染成我们看到的页面。"
+                  data-step-signal="HTTP/1.1 200 OK"
+                  data-step-note="到这里，一次完整的 Request → Server → Response 流程就闭环了；用户看到的是“页面出现了”，背后其实已经完成了多层协作。"
+                  data-step-points="响应中会包含状态码、响应头和响应体|HTML 响应会被浏览器解析并渲染|如果还引用了 CSS、JS、图片，浏览器会继续发起新的请求">
+                  <span class="request-flow__step-number">06</span>
+                  <strong class="request-flow__step-title">响应返回浏览器</strong>
+                  <span class="request-flow__step-subtitle">浏览器收到 Response，并把结果展示给用户。</span>
+                  <span class="request-flow__step-meta">响应阶段</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="request-flow__legend" aria-hidden="true">
+              <span class="request-flow__legend-item request-flow__legend-item--client">浏览器请求</span>
+              <span class="request-flow__legend-item request-flow__legend-item--server">Django 服务器处理</span>
+              <span class="request-flow__legend-item request-flow__legend-item--database">模型 / 数据库查询</span>
+              <span class="request-flow__legend-item request-flow__legend-item--template">模板渲染与页面输出</span>
+            </div>
+          </div>
+
+          <aside class="request-flow__detail" aria-live="polite">
+            <div class="request-flow__detail-top">
+              <span class="request-flow__detail-label" id="request-flow-current-label">当前步骤 1 / 6</span>
+              <div class="request-flow__progress" aria-hidden="true">
+                <span id="request-flow-progress"></span>
+              </div>
+            </div>
+            <h5 id="request-flow-detail-title">1. 浏览器发起请求</h5>
+            <p id="request-flow-detail-description">用户在浏览器输入网址、点击导航链接，或者提交表单后，浏览器会把请求地址、请求方法和请求参数一并发送给 Django 服务器。</p>
+            <div class="request-flow__signal">
+              <span class="request-flow__signal-label">示例信号</span>
+              <code id="request-flow-detail-signal">GET /posts/?page=1 HTTP/1.1</code>
+            </div>
+            <ul class="request-flow__bullets" id="request-flow-detail-points">
+              <li>浏览器会带上 URL、请求方法和请求头。</li>
+              <li>如果是表单提交，还可能附带 POST 数据或上传文件。</li>
+              <li>请求先到达 Web 服务器，再交给 Django 处理。</li>
+            </ul>
+            <p class="request-flow__note" id="request-flow-detail-note">这是完整流程的起点，请求还没有进入业务逻辑，浏览器此时只是把“我要访问什么资源”表达清楚。</p>
+          </aside>
+        </div>
+      </section>
+
+      <h2>Django 的路由系统（URLconf）</h2>
+      <p>Django 的项目文件夹和每个应用（app）目录下都可以有 <code>urls.py</code> 文件，它们共同构成了 Django 的路由配置系统（URLconf）。服务器收到用户请求后，会根据用户请求的 URL 地址和 <code>urls.py</code> 中配置的 URL-视图映射关系，去调用执行相应的视图函数或视图类，最后由视图返回给客户端数据。</p>
+      <p>一个优美的 URL 不仅层次分明、逻辑清晰，而且便于记忆，也更利于搜索引擎收录。相反，一个糟糕的 URL 往往可读性差、维护成本高，还更容易造成程序冲突。</p>
+
+      <h3>3.1 URLconf 是如何工作的？</h3>
+      <p>假如我们有一个 <code>blog</code> 博客应用，需要编写两个视图函数，一个用于展示文章列表，一个用于展示文章详情，那么对应的 <code>urls.py</code> 和 <code>views.py</code> 正常情况下可以写成下面这样：</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># blog/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('blog/', views.index),
+    path('blog/articles/&lt;int:id&gt;/', views.article_detail),
+]
+
+# blog/views.py
+def index(request):
+    # 展示所有文章
+    pass
+
+def article_detail(request, id):
+    # 展示某篇具体文章
+    pass</code></pre>
+      <p>那么上面这段代码是如何工作的呢？</p>
       <ul>
-        <li>Django的MTV架构，环境搭建，路由系统，视图</li>
-        <li>ORM介绍，模型定义，数据库迁移，CRUD操作，Admin后台配置</li>
+        <li>当用户在浏览器中输入 <code>/blog/</code> 时，URLconf 会调用 <code>views.py</code> 里的 <code>index</code> 方法，用于展示所有文章。</li>
+        <li>当用户在浏览器中输入 <code>/blog/articles/&lt;int:id&gt;/</code> 时，URLconf 不仅会调用 <code>views.py</code> 里的 <code>article_detail</code> 方法，而且还会把文章 <code>id</code> 通过尖括号的形式传递给视图。</li>
+        <li>在这套机制里，<code>urlpatterns</code> 列表起到了决定性作用，它本质上就是一个 URL-视图映射关系表，负责请求调度。</li>
       </ul>
+      <div class="tip-block">💡 <strong>注意：</strong>当你配置应用级 URL 时，别忘了把应用自己的 <code>urls.py</code> 再加入到项目级的 URL 配置中。</div>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># mysite/urls.py
+from django.urls import include, path
+
+urlpatterns = [
+    path('', include('blog.urls')),
+    # ...
+]</code></pre>
+
+      <h3>3.2 path() 和 re_path() 方法</h3>
+      <p>写一个 URL 并不难，难点在于如何把参数从 URL 传递给视图。Django 提供了两种常见的路由设计方法：<code>path()</code> 和 <code>re_path()</code>，它们都支持向视图函数或类传递参数。</p>
+      <ul>
+        <li><code>path()</code>：采用 <code>&lt;变量类型:变量名&gt;</code> 或 <code>&lt;变量名&gt;</code> 的方式传递参数，例如 <code>&lt;int:id&gt;</code>、<code>&lt;slug:slug&gt;</code> 或 <code>&lt;username&gt;</code>。</li>
+        <li><code>re_path()</code>：采用命名组 <code>(?P&lt;变量名&gt;表达式)</code> 的方式传递参数，适合更复杂的正则匹配场景。</li>
+      </ul>
+      <p>下例中，我们分别用 <code>path()</code> 和 <code>re_path()</code> 定义了两个等效的 URL，它们都把文章的整数型 <code>id</code> 传递给了同一个视图：</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># blog/urls.py
+from django.urls import path, re_path
+from . import views
+
+# 写法一：path()
+urlpatterns = [
+    path('blog/articles/&lt;int:id&gt;/', views.article_detail, name='article_detail'),
+]
+
+# 写法二：re_path()
+urlpatterns = [
+    re_path(r'^blog/articles/(?P&lt;id&gt;\d+)/$', views.article_detail, name='article_detail'),
+]
+
+# blog/views.py
+def article_detail(request, id):
+    # 展示某篇文章
+    pass</code></pre>
+      <ul>
+        <li>URL 中的参数要用尖括号，而不是圆括号。</li>
+        <li>匹配模式最开头通常不需要加斜杠 <code>/</code>，但建议以斜杠结尾，这样风格更统一。</li>
+        <li>使用 <code>re_path()</code> 时并不一定总要以 <code>$</code> 结尾；如果它只是一个前缀入口，就不能过早截断。</li>
+      </ul>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>from django.urls import include, re_path
+
+urlpatterns = [
+    re_path(r'^blog/', include('blog.urls')),
+    # ...
+]</code></pre>
+
+      <h2>Django 的视图（View）</h2>
+
+      <h3>4.1 什么是视图及其工作原理</h3>
+      <p>Django 的 Web 开发也遵循经典软件设计 MVC 模式开发的。View（视图）主要根据用户的请求返回数据，用来展示用户可以看到的内容（比如网页、图片），也可以用来处理用户提交的数据，比如保存到数据库中。</p>
+      <p>Django 的视图（<code>views.py</code>）通常和 URL 路由（URLconf）一起工作的。服务器在收到用户通过浏览器发来的请求后，会根据用户请求的 URL 地址和 <code>urls.py</code> 里配置的 URL-视图映射关系，去执行相应视图函数或视图类，从而返回给客户端响应数据。</p>
+
+      <h3>4.2 最简单的函数视图</h3>
+      <p>当用户发来一个请求 <code>request</code> 时，我们通过 <code>HttpResponse</code> 打印出 "Hello, World!"。</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># views.py
+from django.http import HttpResponse
+
+def index(request):
+    return HttpResponse("Hello, World!")</code></pre>
+
+      <div class="tip-block">
+        💡 <strong>重要提示：</strong>每个视图函数的第一个默认参数都必需是 <code>request</code>，它是一个全局变量。Django 把每个用户请求封装成了 request 对象，它包含了当前请求的所有信息，比如请求路径 <code>request.path</code>、当前用户 <code>request.user</code> 以及用户通过 POST 提交的数据 <code>request.POST</code>。
+      </div>
+
+      <h2>Django 模型</h2>
+      <p>Model（模型）简而言之即数据模型，是一个 Django 应用的核心。模型不是数据本身，而是抽象的描述数据的构成和逻辑关系。</p>
+      <p>每个 Django 的模型（model）实际上是个类，继承了 <code>models.Model</code>。每个 Model 应该包括属性（字段）、关系和方法。当你定义好 Model 模型后，Django 的接口会自动帮你在数据库生成相应的数据表。</p>
+
+      <h3>5.1 模型的组成</h3>
+      <p>一个标准的 Django 模型分别由模型字段、META 选项和方法三部分组成。Django 官方编码规范建议按如下方式排列：</p>
+      <ol>
+        <li>定义的模型字段：包括基础字段和关系字段</li>
+        <li>自定义的 Manager 方法</li>
+        <li><code>class Meta</code> 选项（可选）</li>
+        <li><code>def __str__()</code>（可选）</li>
+        <li><code>def save()</code>（可选）</li>
+        <li><code>def get_absolute_url()</code>（可选）</li>
+        <li>其它自定义的方法</li>
+      </ol>
+
+      <h3>5.2 模型的基础字段</h3>
+      <div class="compare-table">
+        <table>
+          <thead><tr><th>字段类型</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>CharField()</code></td><td>需要通过 <code>max_length</code> 设置最大字符长度。可设置 <code>blank=True</code>、<code>default=''</code>、<code>unique=True</code></td></tr>
+            <tr><td><code>TextField()</code></td><td>适合大量文本，<code>max_length</code> 选项可选</td></tr>
+            <tr><td><code>DateField()</code> 和 <code>DateTimeField()</code></td><td>可设置 <code>default=timezone.now</code>、<code>auto_now=True</code>、<code>auto_now_add=True</code></td></tr>
+            <tr><td><code>EmailField()</code></td><td>用于邮箱字段，建议设置 <code>unique=True</code></td></tr>
+            <tr><td><code>IntegerField()</code>, <code>BooleanField()</code></td><td>可设置 <code>blank=True</code>、<code>null=True</code>、<code>default</code></td></tr>
+            <tr><td><code>FileField()</code>, <code>ImageField()</code></td><td>需要设置 <code>upload_to</code> 指定上传路径</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>5.3 模型的关系字段</h3>
+      <div class="compare-table">
+        <table>
+          <thead><tr><th>关系类型</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>OneToOneField()</code></td><td><strong>单对单关系</strong> - 必需指定 <code>on_delete</code> 选项，可设置 <code>related_name</code></td></tr>
+            <tr><td><code>ForeignKey()</code></td><td><strong>单对多关系</strong> - 必需指定 <code>on_delete</code> 选项，可设置 <code>related_name</code></td></tr>
+            <tr><td><code>ManyToManyField()</code></td><td><strong>多对多关系</strong> - 可设置 <code>through</code> 建立中间模型，可设置 <code>related_name</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>5.4 多对多关系示例</h3>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>from django.db import models
+
+class Person(models.Model):
+    name = models.CharField(max_length=128)
+    def __str__(self):
+        return self.name
+
+class Group(models.Model):
+    name = models.CharField(max_length=128)
+    members = models.ManyToManyField(Person, through='Membership')
+
+class Membership(models.Model):
+    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    date_joined = models.DateField()
+    invite_reason = models.CharField(max_length=64)</code></pre>
+
+      <h3>5.5 on_delete 删除选项</h3>
+      <div class="compare-table">
+        <table>
+          <thead><tr><th>选项</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>CASCADE</code></td><td>级联删除。删除关联记录时，所有相关记录也会被删除</td></tr>
+            <tr><td><code>PROTECT</code></td><td>保护模式。如果有外键关联，就不允许删除</td></tr>
+            <tr><td><code>SET_NULL</code></td><td>置空模式。删除时，外键字段会被设置为空</td></tr>
+            <tr><td><code>SET_DEFAULT</code></td><td>置默认值。删除时，外键字段设置为默认值</td></tr>
+            <tr><td><code>DO_NOTHING</code></td><td>什么也不做。删除不报错，外键值依然保留</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>5.6 related_name 选项</h3>
+      <p><code>related_name</code> 用于设置模型反向查询的名字。Django 默认使用 <code>模型名_set</code> 进行反查，但我们可以通过 <code>related_name</code> 设置更友好的名字。</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>class Publisher(models.Model):
+    name = models.CharField(max_length=30)
+
+class Book(models.Model):
+    name = models.CharField(max_length=30)
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE, related_name='books')
+
+# 反向查询：publisher.books.all()  而不是 publisher.book_set.all()</code></pre>
+
+      <h3>5.7 模型的 META 选项</h3>
+      <div class="compare-table">
+        <table>
+          <thead><tr><th>选项</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>abstract=True</code></td><td>指定该模型为抽象模型</td></tr>
+            <tr><td><code>verbose_name</code></td><td>为模型设置便于人类阅读的别名</td></tr>
+            <tr><td><code>db_table</code></td><td>自定义数据表名</td></tr>
+            <tr><td><code>ordering</code></td><td>自定义按哪个字段排序，<code>-</code> 代表逆序</td></tr>
+            <tr><td><code>indexes</code></td><td>为数据表设置索引</td></tr>
+            <tr><td><code>constraints</code></td><td>给数据库中的数据表增加约束</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>5.8 模型的标准方法</h3>
+      <ul>
+        <li><code>def __str__()</code>：给单个模型对象实例设置人为可读的名字</li>
+        <li><code>def save()</code>：重写 save 方法</li>
+        <li><code>def get_absolute_url()</code>：为单个模型实例对象生成独一无二的 URL</li>
+      </ul>
+
+      <div class="exercise-block">
+        <h4>🏋️ 练习题 — Django 模型</h4>
+        <ul class="exercise-list">
+          <li data-num="1"><span class="exercise-tag tag-easy">入门</span>创建一个 <code>Blog</code> 模型，包含 <code>title</code>、<code>content</code>、<code>author</code>、<code>created_at</code> 字段，并实现 <code>__str__</code> 方法。<span class="hint">提示：使用 CharField、TextField、DateTimeField，auto_now_add=True 自动记录创建时间。</span></li>
+          <li data-num="2"><span class="exercise-tag tag-easy">入门</span>创建 <code>Category</code> 和 <code>Post</code> 模型，Post 通过 ForeignKey 关联到 Category，设置 <code>related_name='posts'</code>。<span class="hint">提示：Category 有 name 字段，Post 有 title、content、category 字段。</span></li>
+          <li data-num="3"><span class="exercise-tag tag-medium">进阶</span>创建 <code>User</code> 和 <code>Group</code> 模型，使用 ManyToManyField 建立多对多关系。<span class="hint">提示：User 有 username、email；Group 有 name、members（ManyToManyField）。</span></li>
+          <li data-num="4"><span class="exercise-tag tag-medium">进阶</span>为 Post 模型添加 Meta 选项：<code>ordering=['-created_at']</code>、<code>verbose_name='文章'</code>、<code>verbose_name_plural='文章列表'</code>。<span class="hint">提示：在 Post 类内部定义 class Meta，设置相应选项。</span></li>
+          <li data-num="5"><span class="exercise-tag tag-hard">挑战</span>创建 <code>Author</code>、<code>Book</code> 和 <code>Publisher</code> 模型，Book 与 Author 是多对多关系，Book 与 Publisher 是单对多关系。<span class="hint">提示：使用 ManyToManyField 和 ForeignKey，设置合适的 related_name。</span></li>
+        </ul>
+      </div>
+
+      <h2>Django ORM 增删改查实战应用</h2>
+      <p>本节展示了在博客项目中如何实际应用 Django ORM 的增删改查方法。</p>
+
+      <h3>6.1 项目模型</h3>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>class Post(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    author = models.CharField(max_length=100, default='匿名')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title</code></pre>
+
+      <h3>6.2 增（Create）</h3>
+      <h4>方法一：save() 方法</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>from .models import Post
+post = Post(title="My first post", content="My first post content", author="张三")
+post.save()</code></pre>
+
+      <h4>方法二：create() 方法</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>def create_post(request):
+    """创建新文章"""
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        author = request.POST.get('author', '匿名')
+        
+        if title and content:
+            # 使用 create() 方法直接创建并保存到数据库
+            Post.objects.create(title=title, content=content, author=author)
+            return redirect('post_list')
+    
+    return render(request, 'blog/create_post.html')</code></pre>
+
+      <h4>方法三：get_or_create() 方法</h4>
+      <p>避免重复创建：</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>obj, created = Post.objects.get_or_create(title="My first post", content="content")</code></pre>
+
+      <h4>方法四：bulk_create() 方法</h4>
+      <p>批量插入多条数据（高效）：</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>posts = [
+    Post(title="title1", content="content1", author="作者1"),
+    Post(title="title2", content="content2", author="作者2"),
+    Post(title="title3", content="content3", author="作者3")
+]
+
+Post.objects.bulk_create(posts)</code></pre>
+
+      <h3>6.3 删（Delete）</h3>
+      <h4>删除单条数据</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># 删除第5篇文章
+Post.objects.get(pk=5).delete()</code></pre>
+
+      <h4>删除部分数据</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>def delete_by_author(request):
+    """删除指定作者的所有文章"""
+    if request.method == 'POST':
+        author = request.POST.get('author')
+        if author:
+            # 使用 filter().delete() 删除多条数据
+            deleted_count, _ = Post.objects.filter(author=author).delete()
+            return redirect('post_list')
+    
+    # 获取所有作者列表
+    authors = Post.objects.values_list('author', flat=True).distinct()
+    return render(request, 'blog/delete_by_author.html', {'authors': authors})</code></pre>
+
+      <h4>删除所有数据</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># 慎用！
+Post.objects.all().delete()</code></pre>
+
+      <h3>6.4 改（Update）</h3>
+      <h4>方法一：save() 方法</h4>
+      <p>在 <code>edit_post</code> 视图中更新单篇文章：</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>def edit_post(request, post_id):
+    """编辑并更新文章"""
+    post = get_object_or_404(Post, id=post_id)
+    
+    if request.method == 'POST':
+        post.title = request.POST.get('title')
+        post.content = request.POST.get('content')
+        post.author = request.POST.get('author')
+        post.save()  # 保存更改
+        return redirect('post_list')
+    
+    return render(request, 'blog/edit_post.html', {'post': post})</code></pre>
+
+      <h4>方法二：filter().update() 方法</h4>
+      <p>批量更新多条数据：</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>def update_author(request):
+    """批量更新文章作者"""
+    if request.method == 'POST':
+        old_author = request.POST.get('old_author')
+        new_author = request.POST.get('new_author')
+        
+        if old_author and new_author:
+            # 使用 filter().update() 批量更新
+            updated_count = Post.objects.filter(author=old_author).update(author=new_author)
+            return redirect('post_list')
+    
+    # 获取所有作者列表
+    authors = Post.objects.values_list('author', flat=True).distinct()
+    return render(request, 'blog/update_author.html', {'authors': authors})</code></pre>
+
+      <h4>方法三：bulk_update() 方法</h4>
+      <p>批量更新多条数据：</p>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>posts = Post.objects.filter(author='old_author')
+for post in posts:
+    post.author = 'new_author'
+
+Post.objects.bulk_update(posts, ['author'])</code></pre>
+
+      <h3>6.5 查（Read）</h3>
+      <h4>查询所有数据</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>def post_list(request):
+    """读取并显示所有文章"""
+    posts = Post.objects.all()  # QuerySet类型，实例对象列表
+    
+    # 获取所有作者列表（用于筛选下拉菜单）
+    authors = Post.objects.values_list('author', flat=True).distinct()
+    
+    # 获取统计信息
+    total_posts = Post.objects.count()
+    total_authors = Post.objects.values('author').distinct().count()</code></pre>
+
+      <h4>查询单条数据</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>post = Post.objects.get(id=11)
+
+# 使用 get_object_or_404（推荐）
+from django.shortcuts import get_object_or_404
+post = get_object_or_404(Post, pk=1)</code></pre>
+
+      <h4>按条件查询</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># 大于等于、小于等于
+posts = Post.objects.filter(id__gte=2).filter(id__lte=11)
+
+# 不等于
+posts = Post.objects.exclude(id=10)
+
+# 按范围查询
+posts = Post.objects.filter(id__range=[2, 11])
+posts = Post.objects.filter(id__in=[3, 6, 9])</code></pre>
+
+      <h4>字符串模糊查询</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>query = request.GET.get('q', '')
+author_filter = request.GET.get('author', '')
+
+# 按标题搜索（忽略大小写）
+if query:
+    posts = posts.filter(title__icontains=query)
+
+# 按作者筛选
+if author_filter:
+    posts = posts.filter(author=author_filter)</code></pre>
+
+      <h4>按日期时间查询</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code># 查询2024年发表的文章
+Post.objects.filter(created_at__year=2024)
+
+# 查询2024年3月19日发表的文章
+import datetime
+Post.objects.filter(created_at__date=datetime.date(2024, 3, 19))
+
+# 查询2024年1月1日以后发表的文章
+Post.objects.filter(created_at__gt=datetime.date(2024, 1, 1))
+
+# 与当前时间相比，查询最近发表的文章
+from django.utils import timezone
+Post.objects.filter(created_at__gt=timezone.now())</code></pre>
+
+      <h3>6.6 高级查询</h3>
+      <h4>Q 方法（复杂条件查询）</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>from django.models import Q
+
+# 查询标题含有python或Django的文章
+posts = Post.objects.filter(Q(title__icontains='python') | Q(title__icontains='django'))
+
+# 查询标题含有python，不含有Django的文章
+posts = Post.objects.filter(Q(title__icontains='python') & ~Q(title__icontains='django'))</code></pre>
+
+      <h4>F 方法（字段值比较）</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>from django.db.models import F
+
+# 查询评论数大于回复数的文章
+Post.objects.filter(comments__gt=F('pingbacks'))
+
+# 查询评论数大于回复数2倍的文章
+Post.objects.filter(comments__gt=F('pingbacks') * 2)</code></pre>
+
+      <h4>Count 方法（聚合统计）</h4>
+      <div class="code-label">Python</div>
+      <pre class="code-block"><code>from django.db.models import Count
+
+def statistics(request):
+    """显示博客统计信息"""
+    # 总文章数
+    total_posts = Post.objects.count()
+    
+    # 总作者数
+    total_authors = Post.objects.values('author').distinct().count()
+    
+    # 每个作者的文章数（使用 Count 聚合）
+    author_stats = Post.objects.values('author').annotate(count=Count('id')).order_by('-count')
+    
+    # 最新的 5 篇文章
+    latest_posts = Post.objects.all()[:5]
+    
+    context = {
+        'total_posts': total_posts,
+        'total_authors': total_authors,
+        'author_stats': author_stats,
+        'latest_posts': latest_posts,
+    }
+    
+    return render(request, 'blog/statistics.html', context)</code></pre>
+
+      <div class="exercise-block">
+        <h4>🏋️ 练习题 — Django ORM 操作</h4>
+        <ul class="exercise-list">
+          <li data-num="1"><span class="exercise-tag tag-easy">入门</span>使用 <code>create()</code> 方法创建 3 篇文章，分别由不同作者撰写。<span class="hint">提示：Post.objects.create(title=..., content=..., author=...)</span></li>
+          <li data-num="2"><span class="exercise-tag tag-easy">入门</span>查询所有文章，并按创建时间逆序排列，显示最新的 5 篇。<span class="hint">提示：Post.objects.all()[:5]</span></li>
+          <li data-num="3"><span class="exercise-tag tag-medium">进阶</span>使用 <code>filter()</code> 查询标题包含"Django"的所有文章，并统计数量。<span class="hint">提示：filter(title__icontains='Django').count()</span></li>
+          <li data-num="4"><span class="exercise-tag tag-medium">进阶</span>使用 <code>filter().update()</code> 批量更新某个作者的所有文章作者名为"新作者"。<span class="hint">提示：filter(author='old_author').update(author='new_author')</span></li>
+          <li data-num="5"><span class="exercise-tag tag-hard">挑战</span>使用 Q 方法查询标题包含"Python"或"Django"，且作者为"张三"的文章。<span class="hint">提示：filter(Q(title__icontains='Python') | Q(title__icontains='Django'), author='张三')</span></li>
+        </ul>
+      </div>
 
       <section class="download-box" aria-labelledby="dl-03">
         <h2 id="dl-03" class="section-title">资料下载</h2>
         <a class="btn btn-download" href="../assets/downloads/course-03/course-03-notes.txt" download="course-03-notes.txt">下载第三节课资料</a>
       </section>
-
     </article>
   </main>
+  <script>
+    (function () {
+      var flowRoot = document.querySelector('[data-request-flow]');
+      if (!flowRoot) return;
+      var flowSection = flowRoot.closest('.request-flow');
+
+      var stepButtons = Array.prototype.slice.call(flowRoot.querySelectorAll('[data-step-index]'));
+      var progress = document.getElementById('request-flow-progress');
+      var currentLabel = document.getElementById('request-flow-current-label');
+      var title = document.getElementById('request-flow-detail-title');
+      var description = document.getElementById('request-flow-detail-description');
+      var signal = document.getElementById('request-flow-detail-signal');
+      var points = document.getElementById('request-flow-detail-points');
+      var note = document.getElementById('request-flow-detail-note');
+      var controlButtons = Array.prototype.slice.call(flowSection.querySelectorAll('[data-flow-action]'));
+      var autoplayBtn = flowSection.querySelector('[data-flow-action="autoplay"]');
+      var currentIndex = 0;
+      var timer = null;
+
+      function renderStep(index) {
+        currentIndex = index;
+
+        stepButtons.forEach(function (button, buttonIndex) {
+          button.classList.toggle('is-active', buttonIndex === index);
+          button.classList.toggle('is-complete', buttonIndex < index);
+          button.setAttribute('aria-pressed', String(buttonIndex === index));
+        });
+
+        var activeButton = stepButtons[index];
+        title.textContent = activeButton.dataset.stepTitle;
+        description.innerHTML = activeButton.dataset.stepDescription;
+        signal.textContent = activeButton.dataset.stepSignal;
+        note.textContent = activeButton.dataset.stepNote;
+        currentLabel.textContent = '当前步骤 ' + (index + 1) + ' / ' + stepButtons.length;
+        progress.style.width = ((index + 1) / stepButtons.length * 100) + '%';
+        points.innerHTML = '';
+
+        activeButton.dataset.stepPoints.split('|').forEach(function (item) {
+          var li = document.createElement('li');
+          li.textContent = item;
+          points.appendChild(li);
+        });
+
+        if (window.innerWidth <= 1024) {
+          activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }
+
+      function stopAutoplay() {
+        if (timer) {
+          window.clearInterval(timer);
+          timer = null;
+        }
+        autoplayBtn.classList.remove('is-running');
+        autoplayBtn.textContent = '自动播放';
+      }
+
+      function startAutoplay() {
+        stopAutoplay();
+        autoplayBtn.classList.add('is-running');
+        autoplayBtn.textContent = '播放中...';
+        timer = window.setInterval(function () {
+          if (currentIndex >= stepButtons.length - 1) {
+            stopAutoplay();
+            return;
+          }
+          renderStep(currentIndex + 1);
+        }, 1800);
+      }
+
+      stepButtons.forEach(function (button, index) {
+        button.addEventListener('click', function () {
+          stopAutoplay();
+          renderStep(index);
+        });
+      });
+
+      controlButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          var action = button.dataset.flowAction;
+
+          if (action === 'prev') {
+            stopAutoplay();
+            renderStep(Math.max(0, currentIndex - 1));
+          }
+
+          if (action === 'next') {
+            stopAutoplay();
+            renderStep(Math.min(stepButtons.length - 1, currentIndex + 1));
+          }
+
+          if (action === 'reset') {
+            stopAutoplay();
+            renderStep(0);
+          }
+
+          if (action === 'autoplay') {
+            if (timer) {
+              stopAutoplay();
+            } else {
+              startAutoplay();
+            }
+          }
+        });
+      });
+
+      renderStep(0);
+    }());
+  </script>
 </body>
-</h
+</html>
