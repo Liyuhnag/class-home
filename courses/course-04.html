@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>第四节课 | 西南科技大学蓝鲸Sass开发课程</title>
+  <title>第四节课 · Django 序列化、中间件与 Celery | 西南科技大学蓝鲸Sass开发课程</title>
   <link rel="stylesheet" href="../assets/css/main.css" />
   <script defer src="../assets/js/main.js"></script>
 </head>
@@ -21,12 +21,415 @@
   <main class="container course-layout">
     <div class="breadcrumb"><a href="../index.html">首页</a> / 第四节课</div>
     <article class="panel">
-      <h1>第四节课</h1>
-      <div class="meta">课程主题：</div>
+      <h1>第四节课 · Django 序列化、中间件与 Celery</h1>
+      <div class="meta">学习讲义：配合课程中的三个演示项目阅读与实践。</div>
       <ul>
-        <li>用户认证，session和cookie，中间件</li>
-        <li>Restful API设计，RestFramework，认证与权限，分页，异步任务，定时任务</li>
+        <li><code>serializer_auto_demo</code> — 序列化（Django REST framework）</li>
+        <li><code>middleware_mixin_demo</code> — 中间件（<code>MiddlewareMixin</code> 执行顺序）</li>
+        <li><code>celery_async_demo</code> — 同步阻塞与异步任务（概念 + 阻塞演示）</li>
       </ul>
+      <blockquote class="tip-block">
+        建议在电脑上<strong>跟着命令与 URL 自己跑一遍</strong>，对照项目里的源码理解。
+      </blockquote>
+
+      <h2>学习目标</h2>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>主题</th>
+            <th>学完你可以</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>序列化</strong></td>
+            <td>说清「模型对象 → 可输出数据 → JSON」各自谁负责；能读懂 <code>ModelSerializer</code> 和 <code>SerializerMethodField</code> 的用法。</td>
+          </tr>
+          <tr>
+            <td><strong>中间件</strong></td>
+            <td>说清请求进入 Django 后大致经过哪些阶段；能根据打印结果判断多个中间件时 <code>process_request</code> / <code>process_view</code> / <code>process_response</code> 的顺序。</td>
+          </tr>
+          <tr>
+            <td><strong>Celery</strong></td>
+            <td>解释为什么耗时任务不适合一直放在 HTTP 请求里；知道 Task、Broker、Worker、<code>.delay()</code> 分别是什么。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>1. 序列化与反序列化</h2>
+      <p>在后端开发中，数据并不是一直以「对象」的形式存在。程序内部使用的是 Python 对象、类实例、列表、字典等内存结构，但当数据需要通过网络发送给前端、写入文件、保存到缓存、投递到消息队列时，就必须转换成另一种可以传输和存储的格式。这就是序列化与反序列化要解决的问题。</p>
+      <p><strong>序列化</strong>，指的是把程序中的对象转换成可传输、可存储的数据格式。<strong>反序列化</strong>，指的是把这些格式重新转换成程序能够继续处理的数据对象。可以把它理解成一次「翻译」过程。程序内部的数据结构是机器运行时的表达方式，而 JSON、XML、YAML 这类格式更适合系统之间交换数据。</p>
+
+      <h3>一、什么是序列化</h3>
+      <p>序列化的本质是把内存中的对象转换成外部世界可以识别的形式。例如，一个 Python 字典本来只能在当前进程里使用，不能直接返回给浏览器，也不能直接放进消息队列中。只有把它转换成 JSON 字符串、二进制流或其他标准格式，别的程序或服务才能读取。</p>
+      <p>例如：</p>
+      <div class="code-label">Python · json.dumps（序列化）</div>
+      <pre class="code-block"><code>import json
+
+data = {
+    "name": "Tom",
+    "age": 20
+}
+
+json_str = json.dumps(data)
+print(json_str)</code></pre>
+      <p>这里的 <code>json.dumps(data)</code> 就是在做序列化。它把 Python 字典转换成了 JSON 字符串。</p>
+
+      <h3>二、什么是反序列化</h3>
+      <p>反序列化是序列化的逆过程。它把已经传输或存储的数据格式，还原成程序可操作的对象。</p>
+      <p>例如：</p>
+      <div class="code-label">Python · json.loads（反序列化）</div>
+      <pre class="code-block"><code>import json
+
+json_str = '{"name": "Tom", "age": 20}'
+obj = json.loads(json_str)
+print(obj)</code></pre>
+      <p>这里的 <code>json.loads(json_str)</code> 就是在做反序列化。它把 JSON 字符串重新转成了 Python 字典。</p>
+
+      <h3>三、为什么需要序列化与反序列化</h3>
+      <p>序列化和反序列化之所以重要，是因为程序中的对象无法直接跨进程、跨网络或跨系统传递。</p>
+      <p>常见场景包括：</p>
+      <ul>
+        <li>前后端接口通信：后端把数据序列化成 JSON 返回给前端</li>
+        <li>数据持久化：把对象转成可保存的格式写入文件、Redis 或数据库</li>
+        <li>消息队列：把消息对象序列化后发送到队列中</li>
+        <li>分布式系统：不同服务之间通过序列化后的数据进行调用和交换</li>
+      </ul>
+      <p>如果没有序列化，不同系统之间就无法以统一格式传递数据。</p>
+
+      <h3>四、常见的序列化格式</h3>
+      <p>实际开发中常见的序列化格式主要有以下几类：</p>
+      <ul>
+        <li><strong>JSON</strong>：最常见，结构清晰，前后端都容易处理</li>
+        <li><strong>XML</strong>：结构严谨，但相对冗长</li>
+        <li><strong>YAML</strong>：可读性强，常用于配置文件</li>
+        <li><strong>二进制格式</strong>：例如 Protocol Buffers、MessagePack，体积更小，传输效率更高</li>
+        <li><strong>语言特定格式</strong>：例如 Python 的 <code>pickle</code></li>
+      </ul>
+      <p>在 Web 开发中，JSON 是最常用的格式，因为它跨语言、易调试、浏览器天然支持。</p>
+
+      <h3>五、Django 中的序列化思想</h3>
+      <p>在 Django 中，即使你没有显式使用「序列化器」这个词，也经常在做序列化工作。比如你在视图里返回 JSON：</p>
+      <div class="code-label">Django · JsonResponse</div>
+      <pre class="code-block"><code>from django.http import JsonResponse
+
+def user_info(request):
+    data = {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@example.com",
+    }
+    return JsonResponse(data)</code></pre>
+      <p>这里 <code>JsonResponse</code> 做的事情，本质上就是把 Python 字典序列化成 JSON 响应。</p>
+      <p>前端接收到这段 JSON 后，再把它转成 JavaScript 对象进行展示和处理，这个过程本质上就是反序列化。</p>
+
+      <h3>六、序列化与反序列化常见问题</h3>
+      <p>虽然概念看起来简单，但在真实开发中有几个问题非常常见。</p>
+      <h4>1. 类型不能直接转换</h4>
+      <p>不是所有 Python 对象都能直接转成 JSON。例如日期、文件对象、自定义类实例，通常都需要先手动转换。</p>
+      <h4>2. 外部输入需要校验</h4>
+      <p>反序列化时不能只是「转回来」就结束，还需要校验字段是否合法。例如：</p>
+      <ul>
+        <li>用户名是否为空</li>
+        <li>年龄是否是数字</li>
+        <li>邮箱格式是否正确</li>
+      </ul>
+      <p>否则系统可能接收到错误甚至恶意数据。</p>
+      <h4>3. 安全问题</h4>
+      <p>某些序列化方式虽然方便，但安全性差。例如 <code>pickle</code> 可以还原复杂对象，但如果反序列化不可信数据，可能带来严重安全风险。因此 Web 场景下通常优先选 JSON。</p>
+      <h4>4. 版本兼容问题</h4>
+      <p>如果一个系统升级后修改了序列化格式，旧数据可能无法正确反序列化。因此在大型项目中，数据格式设计通常要考虑兼容性。</p>
+
+      <h3>七、如何理解这两个概念</h3>
+      <p>可以用一句话总结：</p>
+      <ul>
+        <li><strong>序列化</strong>：把程序内部的数据转换成外部可以传输和存储的格式</li>
+        <li><strong>反序列化</strong>：把外部格式还原成程序可以继续使用的数据结构</li>
+      </ul>
+      <p>它们是接口开发、缓存、消息队列、前后端交互、分布式系统中的基础能力。</p>
+
+      <h2>2. 序列化实践：<code>serializer_auto_demo</code></h2>
+      <p>下面结合 Django REST framework 演示项目，看「模型 → 序列化器 → JSON」在 API 里如何落地。概念上，这与前一节的序列化思想一致：把内存中的模型对象变成可传输的 JSON；DRF 的 <code>Serializer</code> 还承担字段校验与形状约定。</p>
+
+      <h3>2.1 数据怎么流？</h3>
+      <p>以 <code>GET /api/books/</code> 为例：</p>
+      <ol>
+        <li>视图用 <code>Book.objects.all()</code> 从数据库取出 <code>QuerySet</code>。</li>
+        <li><code>BookSerializer(queryset, many=True)</code> 把每条 <code>Book</code> 转成适合输出的基础类型（<code>many=True</code> 表示多条）。</li>
+        <li><code>Response({ ..., "results": serializer.data })</code> 由 DRF 把 <code>serializer.data</code> 渲染成 JSON 响应。</li>
+      </ol>
+
+      <h3>2.2 项目里该看哪些文件？</h3>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>文件</th>
+            <th>作用</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>bookstore/models.py</code></td>
+            <td><code>Book</code> 模型：书名、作者、价格、出版日期、是否推荐等。</td>
+          </tr>
+          <tr>
+            <td><code>bookstore/serializers.py</code></td>
+            <td><code>BookSerializer</code>：继承 <code>ModelSerializer</code>，在 <code>Meta.fields</code> 里列出对外字段；<code>display_title</code>、<code>stock_label</code> 用 <code>SerializerMethodField</code>，通过 <code>get_*</code> 方法生成<strong>计算字段</strong>（不必在数据库里多存一列）。</td>
+          </tr>
+          <tr>
+            <td><code>bookstore/views.py</code></td>
+            <td><code>book_list</code>、<code>book_detail</code>：取对象或 <code>QuerySet</code>，构造 <code>BookSerializer</code>，用 <code>serializer.data</code> 放进 <code>Response</code>。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>2.3 请你动手</h3>
+      <p>在项目根目录的 <code>serializer_auto_demo</code> 下（需已安装依赖、建好虚拟环境）：</p>
+      <div class="code-label">终端</div>
+      <pre class="code-block"><code>cd serializer_auto_demo
+python manage.py migrate
+python manage.py runserver</code></pre>
+      <p>浏览器或接口工具访问：</p>
+      <ul>
+        <li><code>GET /api/</code> — 说明与端点列表</li>
+        <li><code>GET /api/books/</code> — 图书列表</li>
+        <li><code>GET /api/books/1/</code> — 单本书（若数据库里已有 id 为 1 的书）</li>
+      </ul>
+      <blockquote class="tip-block">
+        <strong>想一想</strong>：如果要在 JSON 里多一个「展示用标签」，而不改数据库表结构，改<strong>模型</strong>还是改<strong>序列化器</strong>更合适？（提示：展示逻辑常放在 Serializer。）
+      </blockquote>
+
+      <h3>2.4 小节</h3>
+      <p>序列化器像是 API 的<strong>对外形状说明书</strong>：哪些字段出现、是否只读、是否要校验。视图尽量保持简单：<strong>查数据 → 序列化 → <code>Response</code></strong>。使用 DRF 时，你通常<strong>不用</strong>在视图里手写 <code>json.dumps</code>，也<strong>不用</strong>自己逐个字段拼大字典；<strong>序列化器</strong>负责字段长什么样，<strong>视图</strong>负责取模型、调用序列化器、返回 <code>Response</code>。</p>
+
+      <h2>3. 中间件：<code>middleware_mixin_demo</code></h2>
+
+      <h3>3.1 中间件是什么？</h3>
+      <p>中间件是挂在 Django <strong>处理请求与响应整条链路上</strong>的组件。一个请求会依次经过多个中间件；视图执行完后，响应再依次经过这些中间件（具体经过哪些<strong>钩子</strong>，取决于你怎么写中间件类）。</p>
+      <p>常见用途：打日志、鉴权、安全头、统计耗时、限流等。</p>
+
+      <h3>3.2 本项目用到的钩子（继承 <code>MiddlewareMixin</code>）</h3>
+      <p>本项目中的中间件继承 <code>django.utils.deprecation.MiddlewareMixin</code>，并实现了：</p>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>方法</th>
+            <th>大致时机</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>process_request(request)</code></td>
+            <td>请求进来后，可做处理（本演示里会打印日志）。</td>
+          </tr>
+          <tr>
+            <td><code>process_view(request, view_func, view_args, view_kwargs)</code></td>
+            <td>已经匹配到要调用的视图，<strong>但视图函数还没执行</strong>。</td>
+          </tr>
+          <tr>
+            <td><code>process_response(request, response)</code></td>
+            <td>视图已经返回了 <code>HttpResponse</code>，可以再改响应（本演示里会打印日志）。</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>（Django 还提供 <code>process_exception</code> 等，本仓库未演示。）</p>
+
+      <h3>3.3 多个中间件时，顺序怎么记？</h3>
+      <p>在 <code>settings.py</code> 里，<code>MIDDLEWARE</code> 列表<strong>从上到下</strong>是中间件的注册顺序。对本演示中的这套 <code>process_*</code>：</p>
+      <ul>
+        <li><strong>请求阶段</strong>：<code>process_request</code>、<code>process_view</code> 都是 <strong>先列表里的第一个，再第二个</strong>（自上而下）。</li>
+        <li><strong>响应阶段</strong>：<code>process_response</code> 是 <strong>先第二个，再第一个</strong>（自下而上），像「先套上的外层后脱」。</li>
+      </ul>
+      <p>环境变量 <code>MIDDLEWARE_DEMO_MODE</code> 控制演示模式：</p>
+      <ul>
+        <li><code>single</code>：只启用 <code>SingleTraceMiddleware</code>。</li>
+        <li><code>multi</code>（默认）：<code>FirstTraceMiddleware</code> 在前，<code>SecondTraceMiddleware</code> 在后。</li>
+      </ul>
+      <p>访问 <code>http://127.0.0.1:8000/demo/</code> 时，终端里应看到类似下面的输出（与你的 README 一致即可）。</p>
+      <p class="sub-heading">单个中间件</p>
+      <div class="code-label">终端输出</div>
+      <pre class="code-block"><code>[单个中间件] process_request
+[单个中间件] process_view
+[视图函数] demo_view
+[单个中间件] process_response</code></pre>
+      <p class="sub-heading">多个中间件</p>
+      <div class="code-label">终端输出</div>
+      <pre class="code-block"><code>[第一个中间件] process_request
+[第二个中间件] process_request
+[第一个中间件] process_view
+[第二个中间件] process_view
+[视图函数] demo_view
+[第二个中间件] process_response
+[第一个中间件] process_response</code></pre>
+
+      <h3>3.4 请你动手</h3>
+      <div class="code-label">终端</div>
+      <pre class="code-block"><code>cd middleware_mixin_demo
+
+MIDDLEWARE_DEMO_MODE=single python manage.py runserver
+# 浏览器打开 http://127.0.0.1:8000/demo/ ，看终端打印
+
+# 停掉服务后换多中间件模式：
+MIDDLEWARE_DEMO_MODE=multi python manage.py runserver
+# 再访问同一地址，对比顺序</code></pre>
+
+      <h3>3.5 小节</h3>
+      <p>中间件适合放<strong>很多视图都要用到的横切逻辑</strong>。顺序写错可能导致日志或鉴权顺序不符合预期。真实项目里还有框架自带的 Session、CSRF、安全相关中间件，自定义的一般按团队规范插在合适位置。</p>
+
+      <h2>4. Celery 与耗时任务：<code>celery_async_demo</code></h2>
+
+      <h3>4.1 这个演示项目在代码里演示什么？</h3>
+      <p><code>task_demo/views.py</code> 里有一个 <code>sleep_test_view</code>：在处理请求时执行 <code>time.sleep(3)</code>。这会让你<strong>明显感到接口变慢</strong>（大约 3 秒才返回）。它用来说明：</p>
+      <ul>
+        <li>在<strong>同步</strong>处理模型下，这段时间里 Web 服务器的一个 worker 一直被占用；</li>
+        <li>并发多时，大量「慢请求」会明显影响能同时服务的请求数量。</li>
+      </ul>
+      <blockquote class="tip-block">
+        <strong>说明</strong>：本仓库这一项目<strong>主要用上面的接口演示「阻塞」</strong>；完整接入 Celery（<code>celery.py</code>、Worker、Redis 等）可作为进阶练习，见下文「练习建议」。
+      </blockquote>
+
+      <h3>4.2 Celery 里几个常用概念</h3>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>名词</th>
+            <th>含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Task（任务）</strong></td>
+            <td>用装饰器注册的一个函数，可以被异步投递执行（例如 Django 里常用 <code>@shared_task</code>）。</td>
+          </tr>
+          <tr>
+            <td><strong>Broker</strong></td>
+            <td>消息队列中间件（常见如 Redis、RabbitMQ），用来存放「还没被执行的任务消息」。</td>
+          </tr>
+          <tr>
+            <td><strong>Worker</strong></td>
+            <td>独立进程，从 Broker 取任务并执行里面的代码。</td>
+          </tr>
+          <tr>
+            <td><strong>调用方式</strong></td>
+            <td>Web 视图里通常调用 <code>某任务.delay(参数)</code>，会尽快返回<strong>任务 id</strong> 之类信息，<strong>不</strong>等于等任务跑完才返回页面。</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>可以记一句话：<strong>Web 进程尽量快速响应；重活放到队列里由 Worker 慢慢做；Broker 负责在两者之间传递任务消息。</strong></p>
+
+      <h3>4.3 若以后在 Django 里接 Celery，一般会看到什么？</h3>
+      <ul>
+        <li>项目里可能有 <code>celery.py</code>：创建 <code>Celery</code> 应用并从 Django 的 <code>settings</code> 读配置。</li>
+        <li><code>settings.py</code> 里配置 <code>CELERY_BROKER_URL</code> 等。</li>
+        <li>某个 <code>tasks.py</code> 里定义任务；视图里 <code>import</code> 后使用 <code>.delay()</code>。</li>
+      </ul>
+      <p>具体安装与启动命令以你课程提供的文档为准。</p>
+
+      <h3>4.4 请你动手</h3>
+      <div class="code-label">终端</div>
+      <pre class="code-block"><code>cd celery_async_demo
+python manage.py runserver</code></pre>
+      <p>浏览器访问：</p>
+      <div class="code-label">URL</div>
+      <pre class="code-block"><code>http://127.0.0.1:8000/task-demo/sleep-test/</code></pre>
+      <p>看 JSON 里的 <code>duration_seconds</code>，体会<strong>整段等待都发生在这一次 HTTP 请求里</strong>。再对照 4.2 思考：若把 <code>sleep(3)</code> 改成 Celery 任务在 Worker 里执行，用户这次请求通常可以<strong>很快返回</strong>（只负责「投递任务」）。</p>
+
+      <h3>4.5 小节</h3>
+      <ul>
+        <li><strong>序列化</strong>：决定 API <strong>数据长什么样</strong>。</li>
+        <li><strong>中间件</strong>：在请求进、响应出时做<strong>横切</strong>处理。</li>
+        <li><strong>Celery 这类方案</strong>：把<strong>耗时工作</strong>从 HTTP 请求路径上挪走，改善吞吐与体验。</li>
+      </ul>
+
+      <h2>5. 三张图串起来（总览）</h2>
+      <div class="mermaid-wrap">
+        <pre class="mermaid">flowchart LR
+  Client[客户端]
+  MW[中间件链]
+  View[视图]
+  Ser[序列化器]
+  Queue[任务队列 / Celery]
+
+  Client --> MW --> View
+  View --> Ser
+  View -. 耗时任务 .-> Queue</pre>
+      </div>
+
+      <h2>6. 常见问题（自学时可对照）</h2>
+      <ol>
+        <li>
+          <p><strong>序列化器里能用当前请求 <code>request</code> 吗？</strong><br />
+          可以。视图传 <code>context={'request': request}</code> 时，在序列化器里可通过 <code>self.context['request']</code> 使用（例如按登录用户决定返回哪些字段）。</p>
+        </li>
+        <li>
+          <p><strong>为什么 <code>process_response</code> 是多中间件时倒序执行？</strong><br />
+          与请求路径对称：先进入的中间件后参与响应处理，类似一层层「包洋葱」再一层层拆开。</p>
+        </li>
+        <li>
+          <p><strong>Celery 必须用 Redis 吗？</strong><br />
+          不必须。Broker 也可以用 RabbitMQ 等；Redis 在学习与小型部署里很常见。</p>
+        </li>
+      </ol>
+
+      <h2>7. 练习建议（选做）</h2>
+      <ol>
+        <li>在 <code>BookSerializer</code> 中增加一个只读字段（例如从 <code>published_date</code> 算出「出版年份」），用 <code>SerializerMethodField</code> 实现。</li>
+        <li>在中间件的 <code>process_response</code> 里给响应加一个自定义头（如 <code>X-Demo: 1</code>），用浏览器开发者工具或 <code>curl -I</code> 查看是否出现。</li>
+        <li><strong>进阶</strong>：为 <code>celery_async_demo</code> 增加最小 Celery 配置：定义一个执行 <code>sleep</code> 的任务，视图只调用 <code>.delay()</code> 并返回 <code>task_id</code>，另开终端启动 Worker 验证任务在后台执行。</li>
+      </ol>
+
+      <p class="meta">
+        讲义内容与仓库中三个项目的 README 及源码一致；第四节中 Celery 以概念与阻塞接口演示为主，完整 Celery 工程化以课堂或实验指导为准。
+      </p>
+
+      <section class="course-materials" aria-labelledby="cm-04">
+        <h2 id="cm-04" class="section-title">课程资料（0329）</h2>
+        <p>本课配套示例工程与文档在仓库根目录的 <code>0329/</code> 下，与讲义中的 <code>serializer_auto_demo</code>、<code>middleware_mixin_demo</code>、<code>celery_async_demo</code> 目录一一对应。克隆或拉取本仓库后，在本地进入 <code>0329/</code> 或对应子目录，按 README 与上文命令运行即可。</p>
+        <blockquote class="tip-block">
+          浏览器中打开下方链接时，若显示为纯文本或提示下载，属正常现象；也可在 IDE 中直接打开同路径文件。
+        </blockquote>
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>目录 / 文件</th>
+              <th>说明</th>
+              <th>入口</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>0329/</code></td>
+              <td>第四课资料根目录；含 <code>pyproject.toml</code>、<code>uv.lock</code>（依赖锁定）及顶层 <code>manage.py</code> 等。</td>
+              <td><a href="../0329/pyproject.toml">pyproject.toml</a></td>
+            </tr>
+            <tr>
+              <td><code>0329/serializer_auto_demo/</code></td>
+              <td>Django REST framework 序列化：图书 API、<code>ModelSerializer</code>、<code>SerializerMethodField</code>。</td>
+              <td><a href="../0329/serializer_auto_demo/README.md">README.md</a></td>
+            </tr>
+            <tr>
+              <td><code>0329/middleware_mixin_demo/</code></td>
+              <td>中间件 <code>MiddlewareMixin</code>：<code>process_request</code> / <code>process_view</code> / <code>process_response</code> 顺序演示。</td>
+              <td><a href="../0329/middleware_mixin_demo/README.md">README.md</a></td>
+            </tr>
+            <tr>
+              <td><code>0329/middleware_root_demo/</code></td>
+              <td>与「中间件根项目」相关的独立工程（见 <code>MIDDLEWARE_DEMO.md</code>）。</td>
+              <td><a href="../0329/MIDDLEWARE_DEMO.md">MIDDLEWARE_DEMO.md</a></td>
+            </tr>
+            <tr>
+              <td><code>0329/celery_async_demo/</code></td>
+              <td>同步请求内 <code>sleep</code> 阻塞演示；进阶可在此接入 Celery。</td>
+              <td><a href="../0329/celery_async_demo/task_demo/views.py">task_demo/views.py</a></td>
+            </tr>
+            <tr>
+              <td><code>0329/MIDDLEWARE_DEMO.md</code></td>
+              <td>自定义中间件示例说明：钩子函数、路由与 Git 操作记录。</td>
+              <td><a href="../0329/MIDDLEWARE_DEMO.md">打开文档</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
       <section class="download-box" aria-labelledby="dl-04">
         <h2 id="dl-04" class="section-title">资料下载</h2>
@@ -34,5 +437,23 @@
       </section>
     </article>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      securityLevel: 'loose',
+      themeVariables: {
+        primaryColor: '#e6f6ed',
+        primaryTextColor: '#245f4c',
+        primaryBorderColor: '#4ea980',
+        lineColor: '#3d9970',
+        secondaryColor: '#f5fcf8',
+        tertiaryColor: '#eef9f3',
+        fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif'
+      }
+    });
+  </script>
 </body>
 </html>

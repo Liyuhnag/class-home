@@ -736,6 +736,21 @@ p + .code-block {
   font-size: 13px;
 }
 
+.mermaid-wrap {
+  margin: 12px 0 20px;
+  padding: 16px;
+  border: 1px solid #d9efdf;
+  border-radius: var(--radius-md);
+  background: #f5fcf8;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  overflow-x: auto;
+}
+
+.mermaid-wrap .mermaid {
+  display: flex;
+  justify-content: center;
+}
+
 .meta {
   color: var(--text-sub);
   margin-top: 8px;
