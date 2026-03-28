@@ -751,6 +751,13 @@ p + .code-block {
   justify-content: center;
 }
 
+.course-materials .material-download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 8px;
+}
+
 .meta {
   color: var(--text-sub);
   margin-top: 8px;
